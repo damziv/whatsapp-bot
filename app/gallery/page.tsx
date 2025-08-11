@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 
 type Item = { id: string; url: string; created_at: string; mime?: string | null };
 
@@ -10,8 +11,8 @@ export default function GalleryPage() {
 
   useEffect(() => {
     fetch('/api/gallery')
-      .then(r => r.json())
-      .then(d => setItems(d.items || []))
+      .then((r) => r.json())
+      .then((d) => setItems(d.items || []))
       .finally(() => setLoading(false));
   }, []);
 
@@ -30,11 +31,14 @@ export default function GalleryPage() {
       >
         {items.map((it) => (
           <a key={it.id} href={it.url} target="_blank" rel="noreferrer">
-            {/* If you later allow videos, you can branch on mime.startsWith('video/') */}
-            <img
+            <Image
               src={it.url}
               alt=""
+              width={400}
+              height={300}
               style={{ width: '100%', height: 180, objectFit: 'cover', borderRadius: 8 }}
+              unoptimized
+              priority={false}
             />
           </a>
         ))}

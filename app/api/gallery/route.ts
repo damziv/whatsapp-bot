@@ -8,12 +8,18 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE!
 );
 
-// Adjust how long links stay valid (seconds)
+// How long signed URLs stay valid (seconds)
 const SIGNED_SECONDS = 60 * 60; // 1 hour
 
+type MediaRow = {
+  id: string;
+  storage_key: string;
+  created_at: string;
+  mime: string | null;
+};
+
 export async function GET() {
-  // 1) Get latest media rows
-  const { data: rows, error } = await supabaseAdmin
+  const { data, error } = await supabaseAdmin
     .from('media')
     .select('id, storage_key, created_at, mime')
     .order('created_at', { ascending: false })
@@ -23,22 +29,22 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // 2) Generate signed URL for each file
+  const rows = (data ?? []) as MediaRow[];
+
   const items: { id: string; url: string; created_at: string; mime: string | null }[] = [];
 
-  for (const r of rows ?? []) {
-    const { data: signed, error: signErr } = await supabaseAdmin
-      .storage
+  for (const r of rows) {
+    const { data: signed, error: signErr } = await supabaseAdmin.storage
       .from('media')
       .createSignedUrl(r.storage_key, SIGNED_SECONDS);
 
     if (signErr || !signed?.signedUrl) continue;
 
     items.push({
-      id: r.id as string,
+      id: r.id,
       url: signed.signedUrl,
-      created_at: r.created_at as string,
-      mime: (r as any).mime ?? null,
+      created_at: r.created_at,
+      mime: r.mime,
     });
   }
 
