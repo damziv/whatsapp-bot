@@ -63,10 +63,11 @@ export async function POST(req: NextRequest) {
       // 5) confirm to user
       await sendWhatsApp(waPhoneId!, from, 'Uploaded ✔️ Thanks!');
 
-    } catch (e: any) {
-      console.error('Upload error:', e?.message || e);
-      await sendWhatsApp(waPhoneId!, from, 'Upload failed. Please try again.');
-    }
+    } catch (e) {
+        const err = e as Error;
+        console.error('Upload error:', (err && err.message) ? err.message : String(e));
+        await sendWhatsApp(waPhoneId!, from, 'Upload failed. Please try again.');
+      }
   }
 
   return NextResponse.json({ ok: true });
