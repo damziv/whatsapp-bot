@@ -1,6 +1,7 @@
+// app/api/gallery/route.ts
 export const runtime = 'nodejs';
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseAdmin = createClient(
@@ -16,21 +17,52 @@ type MediaRow = {
   storage_key: string;
   created_at: string;
   mime: string | null;
+  event_slug?: string | null;
+  album_slug?: string | null;
 };
 
-export async function GET() {
-  const { data, error } = await supabaseAdmin
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const code = searchParams.get('code');
+
+  let filter: { event_slug?: string; album_slug?: string } = {};
+
+  if (code) {
+    const { data: album, error: albErr } = await supabaseAdmin
+      .from('albums')
+      .select('event_slug, album_slug')
+      .eq('code', code)
+      .maybeSingle();
+
+    if (albErr) {
+      return NextResponse.json({ error: albErr.message }, { status: 500 });
+    }
+    if (!album) {
+      return NextResponse.json({ items: [] });
+    }
+
+    filter = { event_slug: album.event_slug, album_slug: album.album_slug };
+  }
+
+  let query = supabaseAdmin
     .from('media')
-    .select('id, storage_key, created_at, mime')
+    .select('id, storage_key, created_at, mime, event_slug, album_slug')
     .order('created_at', { ascending: false })
     .limit(100);
+
+  if (filter.event_slug && filter.album_slug) {
+    query = query
+      .eq('event_slug', filter.event_slug)
+      .eq('album_slug', filter.album_slug);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
   const rows = (data ?? []) as MediaRow[];
-
   const items: { id: string; url: string; created_at: string; mime: string | null }[] = [];
 
   for (const r of rows) {
