@@ -39,6 +39,28 @@ type BindingWithAlbum = {
   albums: AlbumRow | null;
 };
 
+type WaImage = { id: string; mime_type?: string; caption?: string };
+type WaDocument = { id: string; mime_type?: string; filename?: string };
+type WaText = { body?: string };
+
+type WaMessage = {
+  from: string;
+  type: string; // 'text' | 'image' | 'document' | others
+  text?: WaText;
+  image?: WaImage;
+  document?: WaDocument;
+  // other fields omitted for brevity
+};
+
+type WaValue = {
+  messages?: WaMessage[];
+  metadata?: { phone_number_id?: string };
+};
+
+type WaBody = {
+  entry?: Array<{ changes?: Array<{ value?: WaValue }> }>;
+};
+
 // -------------------- HELPERS --------------------
 function sha256Hex(buf: Buffer) {
   return crypto.createHash('sha256').update(buf).digest('hex');
@@ -82,17 +104,20 @@ async function upsertBinding(msisdn: string, album_id: string) {
   if (error) throw error;
 }
 
-/**
- * PostgREST sometimes returns embedded relations as arrays when types aren’t generated.
- * Normalize the shape so .albums is a single AlbumRow or null.
- */
-function normalizeBinding(row: any): BindingWithAlbum {
-  const rawAlbums = row?.albums;
-  const albumObj: AlbumRow | null = Array.isArray(rawAlbums)
-    ? (rawAlbums[0] ?? null)
-    : (rawAlbums ?? null);
+/** Normalize embedded relation: PostgREST may send an array; take first or null. */
+function normalizeBinding(row: unknown): BindingWithAlbum {
+  const r = row as { album_id?: unknown; albums?: unknown };
+  const rawAlbums = r?.albums as unknown;
+  let albumObj: AlbumRow | null = null;
+
+  if (Array.isArray(rawAlbums)) {
+    albumObj = (rawAlbums[0] ?? null) as AlbumRow | null;
+  } else if (rawAlbums && typeof rawAlbums === 'object') {
+    albumObj = rawAlbums as AlbumRow;
+  }
+
   return {
-    album_id: String(row?.album_id ?? ''),
+    album_id: String(r?.album_id ?? ''),
     albums: albumObj,
   };
 }
@@ -100,9 +125,7 @@ function normalizeBinding(row: any): BindingWithAlbum {
 async function getBindingWithAlbum(msisdn: string): Promise<BindingWithAlbum | null> {
   const { data, error } = await supabaseAdmin
     .from('msisdn_bindings')
-    .select(
-      'album_id, albums:album_id(id, code, event_slug, album_slug, start_at, end_at, is_active)'
-    )
+    .select('album_id, albums:album_id(id, code, event_slug, album_slug, start_at, end_at, is_active)')
     .eq('msisdn', msisdn)
     .maybeSingle();
 
@@ -117,10 +140,12 @@ async function downloadWhatsAppMedia(mediaId: string): Promise<Buffer> {
     headers: { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN!}` }
   }).then(r => r.json());
 
-  if (!meta?.url) throw new Error('No media URL from WhatsApp');
+  if (!(meta && typeof meta === 'object' && 'url' in meta) || !meta.url) {
+    throw new Error('No media URL from WhatsApp');
+  }
 
   // step 2: download binary using the token
-  const bin = await fetch(meta.url, {
+  const bin = await fetch((meta as { url: string }).url, {
     headers: { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN!}` }
   }).then(r => r.arrayBuffer());
 
@@ -145,23 +170,30 @@ async function sendWhatsApp(waPhoneId: string, toMsisdn: string, text: string) {
 
 // -------------------- WEBHOOK (POST) --------------------
 export async function POST(req: NextRequest) {
-  const body = await req.json().catch(() => null);
+  const body = (await req.json().catch(() => null)) as WaBody | null;
   const entry = body?.entry?.[0];
   const changes = entry?.changes?.[0];
   const value = changes?.value;
-  const messages = value?.messages ?? [];
-  const waPhoneId = value?.metadata?.phone_number_id as string | undefined;
+  const messages = (value?.messages ?? []) as WaMessage[];
+  const waPhoneId = value?.metadata?.phone_number_id;
 
   if (!waPhoneId) return NextResponse.json({ ok: true });
 
   await Promise.all(
-    messages.map(async (msg: any) => {
-      const from = msg.from as string;
-      const type = msg.type as string;
+    messages.map(async (msg) => {
+      const from = msg.from;
+      const type = msg.type;
+
+      // Accept "document" if it's actually an image document
+      const isImageDocument = type === 'document' && !!msg.document?.mime_type?.startsWith('image/');
+      if (isImageDocument && msg.document) {
+        // Shim it into the image shape for reuse
+        msg.image = { id: msg.document.id, mime_type: msg.document.mime_type };
+      }
 
       // --- TEXT: ALBUM <code> handler ---
       if (type === 'text') {
-        const text: string = (msg.text?.body || '').trim();
+        const text = (msg.text?.body || '').trim();
         const m = /^ALBUM\s+([A-Za-z0-9_-]{3,40})$/i.exec(text);
         if (!m) {
           await sendWhatsApp(
@@ -200,15 +232,16 @@ Event: ${album.album_slug}
 Window: ${fmt(album.start_at)} → ${fmt(album.end_at)}
 Now send your photos here.`
           );
-        } catch (e: any) {
-          console.error('album bind error:', e?.message || e);
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : String(err);
+          console.error('album bind error:', message);
           await sendWhatsApp(waPhoneId, from, 'Error setting album. Please try again.');
         }
         return;
       }
 
       // --- Only images accepted for MVP ---
-      if (type !== 'image') {
+      if (type !== 'image' && !isImageDocument) {
         await sendWhatsApp(
           waPhoneId,
           from,
@@ -222,21 +255,37 @@ Now send your photos here.`
         const binding = await getBindingWithAlbum(from);
         const album = binding?.albums;
         if (!album) {
+          // also try from caption, for first-time users sending a photo with caption "ALBUM CODE"
+          const caption = msg.image?.caption?.trim();
+          if (caption) {
+            const m2 = /^ALBUM\s+([A-Za-z0-9_-]{3,40})$/i.exec(caption);
+            if (m2) {
+              const maybe = await getAlbumByCode(m2[1].toUpperCase());
+              if (maybe && maybe.is_active && withinWindow(new Date(), maybe.start_at, maybe.end_at)) {
+                await upsertBinding(from, maybe.id);
+                // proceed as if bound
+              }
+            }
+          }
+        }
+
+        const binding2 = album ? { albums: album } : await getBindingWithAlbum(from);
+        const finalAlbum = binding2?.albums;
+        if (!finalAlbum) {
           await sendWhatsApp(waPhoneId, from, 'Please choose an album first: send "ALBUM <code>" (see QR code).');
           return;
         }
 
         // Enforce window
         const now = new Date();
-        if (!withinWindow(now, album.start_at, album.end_at)) {
+        if (!withinWindow(now, finalAlbum.start_at, finalAlbum.end_at)) {
           await sendWhatsApp(waPhoneId, from, 'This album is currently closed for uploads. ⏱️');
           return;
         }
 
-        // Download & (optional) de-dup
-        const media = msg.image; // { id, mime_type }
-        const waMediaId = media.id as string;
-        const mime = (media.mime_type as string) || 'image/jpeg';
+        // Download & de-dup
+        const waMediaId = msg.image?.id as string;
+        const mime = (msg.image?.mime_type as string) || 'image/jpeg';
         const buf = await downloadWhatsAppMedia(waMediaId);
         const hash = sha256Hex(buf);
 
@@ -252,7 +301,7 @@ Now send your photos here.`
 
         // Build path with slugs
         const ext = mime.includes('jpeg') ? 'jpg' : (mime.split('/')[1] || 'bin');
-        const key = `event/${album.event_slug}/${album.album_slug}/${cryptoRandom()}.${ext}`;
+        const key = `event/${finalAlbum.event_slug}/${finalAlbum.album_slug}/${cryptoRandom()}.${ext}`;
 
         const up = await supabaseAdmin.storage.from('media').upload(key, buf, {
           contentType: mime,
@@ -266,13 +315,14 @@ Now send your photos here.`
           mime,
           bytes: buf.byteLength ?? buf.length ?? null,
           content_hash: hash,
-          event_slug: album.event_slug,
-          album_slug: album.album_slug
+          event_slug: finalAlbum.event_slug,
+          album_slug: finalAlbum.album_slug
         });
 
         await sendWhatsApp(waPhoneId, from, 'Uploaded ✔️ Thanks!');
-      } catch (e: any) {
-        console.error('Upload error:', e?.message || e);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error('Upload error:', message);
         await sendWhatsApp(waPhoneId, from, 'Upload failed. Please try again.');
       }
     })

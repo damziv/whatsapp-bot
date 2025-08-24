@@ -39,104 +39,118 @@ type Body = {
   ownerEmail?: string | null; // optional if you want to link to auth user
 };
 
+type CreatedAlbum = {
+  type: 'bachelor' | 'bachelorette' | 'wedding';
+  label: string;
+  code: string;
+  event_slug: string;
+  album_slug: string;
+  start_at: string;
+  end_at: string;
+  wa_link: string;
+  share_link: string;
+  gallery_link: string;
+};
+
 export async function POST(req: NextRequest) {
-    try {
-      const body = (await req.json()) as Body;
-      const { brideName, groomName, weddingDate, bachelorDate, bacheloretteDate, ownerEmail } = body;
-      if (!brideName || !groomName || !weddingDate) {
-        return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 });
-      }
-  
-      const origin = req.nextUrl.origin; // e.g. https://yourdomain.com
-  
-      // 1) Create profile
-      const { data: prof, error: profErr } = await supabase
-        .from('profiles')
-        .insert({ bride_name: brideName, groom_name: groomName, owner_email: ownerEmail ?? null })
+  try {
+    const body = (await req.json()) as Body;
+
+    const { brideName, groomName, weddingDate, bachelorDate, bacheloretteDate, ownerEmail } = body;
+    if (!brideName || !groomName || !weddingDate) {
+      return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 });
+    }
+
+    const origin = req.nextUrl.origin; // e.g. https://yourdomain.com
+
+    // 1) Create profile
+    const { data: prof, error: profErr } = await supabase
+      .from('profiles')
+      .insert({ bride_name: brideName, groom_name: groomName, owner_email: ownerEmail ?? null })
+      .select('id')
+      .single();
+    if (profErr) throw profErr;
+
+    const profileId = prof.id as string;
+    const profileTag = profileId.replace(/-/g, '').slice(-6); // for event_slug
+
+    type NewEvent = { type: 'bachelor'|'bachelorette'|'wedding'; date: string; label: string };
+    const newEvents: NewEvent[] = [
+      { type: 'wedding', date: weddingDate, label: 'Wedding' },
+    ];
+    if (bachelorDate) newEvents.push({ type: 'bachelor', date: bachelorDate, label: 'Bachelor Party' });
+    if (bacheloretteDate) newEvents.push({ type: 'bachelorette', date: bacheloretteDate, label: 'Bachelorette Party' });
+
+    const createdAlbums: CreatedAlbum[] = [];
+
+    for (const ev of newEvents) {
+      const { start_at, end_at } = computeUtcWindow(ev.date);
+
+      // 2) Insert event (unique per profile/type)
+      const { data: evRow, error: evErr } = await supabase
+        .from('events')
+        .insert({
+          profile_id: profileId,
+          type: ev.type,
+          date: ev.date,
+          start_at,
+          end_at
+        })
         .select('id')
         .single();
-      if (profErr) throw profErr;
-  
-      const profileId = prof.id as string;
-      const profileTag = profileId.replace(/-/g, '').slice(-6); // for event_slug
-  
-      type NewEvent = { type: 'bachelor'|'bachelorette'|'wedding'; date: string; label: string };
-      const newEvents: NewEvent[] = [
-        { type: 'wedding', date: weddingDate, label: 'Wedding' },
-      ];
-      if (bachelorDate) newEvents.push({ type: 'bachelor', date: bachelorDate, label: 'Bachelor Party' });
-      if (bacheloretteDate) newEvents.push({ type: 'bachelorette', date: bacheloretteDate, label: 'Bachelorette Party' });
-  
-      const createdAlbums: Array<{
-        type: string;
-        label: string;
-        code: string;
-        event_slug: string;
-        album_slug: string;
-        start_at: string;
-        end_at: string;
-        wa_link: string;
-        share_link: string;   // your /w route
-        gallery_link: string; // your /gallery route
-      }> = [];
-  
-      for (const ev of newEvents) {
-        const { start_at, end_at } = computeUtcWindow(ev.date);
-  
-        // 2) Insert event
-        const { data: evRow, error: evErr } = await supabase
-          .from('events')
-          .insert({ profile_id: profileId, type: ev.type, date: ev.date, start_at, end_at })
-          .select('id')
-          .single();
-        if (evErr) throw evErr;
-  
-        const eventId = evRow.id as string;
-  
-        // 3) Create album with unique short code
-        let code: string | null = null;
-        for (let i = 0; i < 5; i++) {
-          const candidate = code7();
-          const { error: insertErr } = await supabase
-            .from('albums')
-            .insert({
-              event_id: eventId,
-              code: candidate,
-              event_slug: `p_${profileTag}`,
-              album_slug: ev.type,
-              start_at,
-              end_at,
-              is_active: true
-            });
-          if (!insertErr) { code = candidate; break; }
-          if (insertErr.message && !insertErr.message.includes('duplicate key')) throw insertErr;
+      if (evErr) throw evErr;
+
+      const eventId = evRow.id as string;
+
+      // 3) Create album with unique short code
+      let code: string | null = null;
+      for (let i = 0; i < 5; i++) {
+        const candidate = code7();
+        const { error: insertErr } = await supabase
+          .from('albums')
+          .insert({
+            event_id: eventId,
+            code: candidate,
+            event_slug: `p_${profileTag}`,
+            album_slug: ev.type,
+            start_at,
+            end_at,
+            is_active: true
+          });
+        if (!insertErr) { code = candidate; break; }
+        if (!insertErr.message || insertErr.message.includes('duplicate key')) {
+          continue; // try next candidate on duplicate; otherwise throw below
+        } else {
+          throw insertErr;
         }
-        if (!code) throw new Error('Failed to allocate album code');
-  
-        const wa_link = `https://wa.me/${WABA_NUMBER}?text=${encodeURIComponent('ALBUM ' + code)}`;
-        const share_link = `${origin}/w?code=${encodeURIComponent(code)}`;
-        const gallery_link = `${origin}/gallery?code=${encodeURIComponent(code)}`;
-  
-        createdAlbums.push({
-          type: ev.type,
-          label: ev.label,
-          code,
-          event_slug: `p_${profileTag}`,
-          album_slug: ev.type,
-          start_at,
-          end_at,
-          wa_link,
-          share_link,
-          gallery_link
-        });
       }
-  
-      return NextResponse.json({
-        profile: { id: profileId, bride_name: brideName, groom_name: groomName },
-        albums: createdAlbums
+      if (!code) throw new Error('Failed to allocate album code');
+
+      const wa_link = `https://wa.me/${WABA_NUMBER}?text=${encodeURIComponent('ALBUM ' + code)}`;
+      const share_link = `${origin}/w?code=${encodeURIComponent(code)}`;
+      const gallery_link = `${origin}/gallery?code=${encodeURIComponent(code)}`;
+
+      createdAlbums.push({
+        type: ev.type,
+        label: ev.label,
+        code,
+        event_slug: `p_${profileTag}`,
+        album_slug: ev.type,
+        start_at,
+        end_at,
+        wa_link,
+        share_link,
+        gallery_link
       });
-    } catch (e: any) {
-      console.error('setup-profile error:', e?.message || e);
-      return NextResponse.json({ error: 'Server error' }, { status: 500 });
     }
+
+    return NextResponse.json({
+      profile: { id: profileId, bride_name: brideName, groom_name: groomName },
+      albums: createdAlbums
+    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('setup-profile error:', message);
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
+}

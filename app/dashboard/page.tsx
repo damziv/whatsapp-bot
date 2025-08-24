@@ -1,6 +1,25 @@
+// app/dashboard/page.tsx
 'use client';
 
 import { useState } from 'react';
+
+type CreatedAlbum = {
+  type: 'bachelor' | 'bachelorette' | 'wedding';
+  label: string;
+  code: string;
+  event_slug: string;
+  album_slug: string;
+  start_at: string;
+  end_at: string;
+  wa_link: string;
+  share_link: string;
+  gallery_link: string;
+};
+
+type SetupProfileResponse = {
+  profile: { id: string; bride_name: string; groom_name: string };
+  albums: CreatedAlbum[];
+};
 
 export default function Dashboard() {
   const [form, setForm] = useState({
@@ -11,7 +30,7 @@ export default function Dashboard() {
     bacheloretteDate: '',
     ownerEmail: ''
   });
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<SetupProfileResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -31,11 +50,12 @@ export default function Dashboard() {
           ownerEmail: form.ownerEmail || null
         })
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed');
-      setResult(data);
-    } catch (e: any) {
-      setErr(e.message || 'Failed');
+      const data: SetupProfileResponse | { error: string } = await res.json();
+      if (!res.ok) throw new Error(('error' in data && data.error) || 'Failed');
+      setResult(data as SetupProfileResponse);
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      setErr(message || 'Failed');
     } finally {
       setLoading(false);
     }
@@ -67,18 +87,53 @@ export default function Dashboard() {
 
       {result && (
         <section style={{ marginTop: 20 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 600 }}>Share these links (put into QR):</h2>
-          <ul>
-            {result.albums.map((a: any) => (
-              <li key={a.code} style={{ marginBottom: 6 }}>
-                <strong style={{ textTransform: 'capitalize' }}>{a.type}</strong>: {a.wa_link}
-                <div style={{ fontSize: 12, opacity: 0.7 }}>
-                  Code: {a.code} · Window: {new Date(a.start_at).toLocaleString()} → {new Date(a.end_at).toLocaleString()}
+          <h2 style={{ fontSize: 18, fontWeight: 600 }}>Share these QR codes or links with guests:</h2>
+
+          <div style={{ display: 'grid', gap: 16 }}>
+            {result.albums.map((a: CreatedAlbum) => {
+              const qrImg = `/api/qr?data=${encodeURIComponent(a.share_link)}`;
+
+              const copy = async (text: string) => {
+                try { await navigator.clipboard.writeText(text); alert('Copied!'); }
+                catch { alert('Copy failed'); }
+              };
+
+              return (
+                <div key={a.code} style={{ display: 'flex', gap: 16, alignItems: 'center', border: '1px solid #eee', borderRadius: 8, padding: 12 }}>
+                  <img src={qrImg} width={110} height={110} alt="QR" />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600 }}>{a.label}</div>
+                    <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 6 }}>
+                      Window: {new Date(a.start_at).toLocaleString()} → {new Date(a.end_at).toLocaleString()}
+                    </div>
+
+                    <div style={{ display: 'grid', gap: 6 }}>
+                      <div>
+                        <span style={{ fontSize: 12, opacity: 0.7 }}>QR target: </span>
+                        <a href={a.share_link} target="_blank" rel="noreferrer">{a.share_link}</a>
+                        <button onClick={() => copy(a.share_link)} style={{ marginLeft: 8 }}>Copy</button>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: 12, opacity: 0.7 }}>WhatsApp deep link: </span>
+                        <a href={a.wa_link} target="_blank" rel="noreferrer">{a.wa_link}</a>
+                        <button onClick={() => copy(a.wa_link)} style={{ marginLeft: 8 }}>Copy</button>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: 12, opacity: 0.7 }}>Public gallery: </span>
+                        <a href={a.gallery_link} target="_blank" rel="noreferrer">{a.gallery_link}</a>
+                        <button onClick={() => copy(a.gallery_link)} style={{ marginLeft: 8 }}>Copy</button>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: 12, opacity: 0.7 }}>Album code: </span>
+                        <code>{a.code}</code>
+                        <button onClick={() => copy(a.code)} style={{ marginLeft: 8 }}>Copy</button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </li>
-            ))}
-          </ul>
-          {/* You can render QR with a lib like 'react-qr-code', but plain links are OK for now */}
+              );
+            })}
+          </div>
         </section>
       )}
     </main>
