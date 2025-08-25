@@ -1,3 +1,4 @@
+// app/login/page.tsx
 'use client';
 
 import { useState } from 'react';
@@ -16,11 +17,13 @@ export default function LoginPage() {
     setErr(null);
     setLoading(true);
     try {
-      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const baseUrl =
+        process.env.NEXT_PUBLIC_BASE_URL ||
+        (typeof window !== 'undefined' ? window.location.origin : '');
       const supabase = getSupabaseBrowser();
       const { error } = await supabase.auth.signInWithOtp({
         email,
-        options: { emailRedirectTo: `${origin}/auth/callback` },
+        options: { emailRedirectTo: `${baseUrl}/auth/callback` },
       });
       if (error) throw error;
       setSent(true);
