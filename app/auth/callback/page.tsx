@@ -4,7 +4,7 @@
 export const dynamic = 'force-dynamic';
 
 import { Suspense, useEffect, useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { getSupabaseBrowser } from '@/lib/supabase-browser';
 
 export default function AuthCallbackPage() {
@@ -16,30 +16,49 @@ export default function AuthCallbackPage() {
 }
 
 function CallbackInner() {
-  const sp = useSearchParams();
   const router = useRouter();
+  const sp = useSearchParams();
   const [msg, setMsg] = useState('Completing sign-in…');
 
   useEffect(() => {
-    const code = sp.get('code');
-    if (!code) {
-      setMsg('Missing code.');
-      return;
-    }
     (async () => {
       try {
         const supabase = getSupabaseBrowser();
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
-        if (error) {
-          setMsg('Sign-in failed.');
+
+        // Case A: magic-link tokens in URL hash (#access_token=...&refresh_token=...)
+        if (typeof window !== 'undefined' && window.location.hash.includes('access_token=')) {
+          const params = new URLSearchParams(window.location.hash.slice(1));
+          const access_token = params.get('access_token') ?? '';
+          const refresh_token = params.get('refresh_token') ?? '';
+          if (!access_token || !refresh_token) throw new Error('Missing token(s) in URL hash');
+
+          const { error } = await supabase.auth.setSession({ access_token, refresh_token });
+          if (error) throw error;
+
+          // clean up the hash
+          const cleanUrl = window.location.pathname + window.location.search;
+          window.history.replaceState({}, document.title, cleanUrl);
+
+          router.replace('/portal');
           return;
         }
-        router.replace('/portal');
-      } catch {
-        setMsg('Sign-in failed.');
+
+        // Case B: PKCE-style (?code=...)
+        const code = sp.get('code');
+        if (code) {
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error) throw error;
+          router.replace('/portal');
+          return;
+        }
+
+        setMsg('Missing credentials in URL. Please open the link from the same device/browser.');
+      } catch (e) {
+        console.error(e);
+        setMsg('Sign-in failed. Please try again.');
       }
     })();
-  }, [sp, router]);
+  }, [router, sp]);
 
   return (
     <main style={{ maxWidth: 420, margin: '0 auto', padding: 16 }}>
