@@ -36,7 +36,7 @@ type Body = {
   weddingDate: string;        // "YYYY-MM-DD"
   bachelorDate?: string | null;
   bacheloretteDate?: string | null;
-  ownerEmail?: string | null; // optional if you want to link to auth user
+  ownerEmail?: string; // <-- REQUIRED now
 };
 
 type CreatedAlbum = {
@@ -57,16 +57,19 @@ export async function POST(req: NextRequest) {
     const body = (await req.json()) as Body;
 
     const { brideName, groomName, weddingDate, bachelorDate, bacheloretteDate, ownerEmail } = body;
-    if (!brideName || !groomName || !weddingDate) {
+    if (!brideName || !groomName || !weddingDate || !ownerEmail) {
       return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 });
     }
 
     const origin = req.nextUrl.origin; // e.g. https://yourdomain.com
+        // Optional: coerce empty strings to null defensively
+    const bachelorDateClean = bachelorDate || null;
+    const bacheloretteDateClean = bacheloretteDate || null;
 
     // 1) Create profile
     const { data: prof, error: profErr } = await supabase
       .from('profiles')
-      .insert({ bride_name: brideName, groom_name: groomName, owner_email: ownerEmail ?? null })
+      .insert({ bride_name: brideName, groom_name: groomName, owner_email: ownerEmail })
       .select('id')
       .single();
     if (profErr) throw profErr;
@@ -75,11 +78,11 @@ export async function POST(req: NextRequest) {
     const profileTag = profileId.replace(/-/g, '').slice(-6); // for event_slug
 
     type NewEvent = { type: 'bachelor'|'bachelorette'|'wedding'; date: string; label: string };
-    const newEvents: NewEvent[] = [
-      { type: 'wedding', date: weddingDate, label: 'Wedding' },
-    ];
-    if (bachelorDate) newEvents.push({ type: 'bachelor', date: bachelorDate, label: 'Bachelor Party' });
-    if (bacheloretteDate) newEvents.push({ type: 'bachelorette', date: bacheloretteDate, label: 'Bachelorette Party' });
+    const newEvents: Array<{ type: 'bachelor'|'bachelorette'|'wedding'; date: string; label: string }> = [
+        { type: 'wedding', date: weddingDate, label: 'Wedding' },
+      ];
+      if (bachelorDateClean) newEvents.push({ type: 'bachelor', date: bachelorDateClean, label: 'Bachelor Party' });
+      if (bacheloretteDateClean) newEvents.push({ type: 'bachelorette', date: bacheloretteDateClean, label: 'Bachelorette Party' });
 
     const createdAlbums: CreatedAlbum[] = [];
 

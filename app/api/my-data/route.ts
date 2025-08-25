@@ -81,7 +81,8 @@ export async function GET(req: NextRequest) {
   const { data: albums, error: aErr } = await supabaseAdmin
     .from('albums')
     .select('id, event_id, code, event_slug, album_slug, start_at, end_at, is_active')
-    .in('event_id', eventIds);
+    .in('event_id', eventIds)
+    .eq('is_active', true); // <-- added
 
   if (aErr) return NextResponse.json({ error: aErr.message }, { status: 500 });
 
