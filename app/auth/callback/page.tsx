@@ -1,12 +1,21 @@
+// app/auth/callback/page.tsx
 'use client';
 
 export const dynamic = 'force-dynamic';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { getSupabaseBrowser } from '@/lib/supabase-browser';
 
 export default function AuthCallbackPage() {
+  return (
+    <Suspense fallback={<Fallback />}>
+      <CallbackInner />
+    </Suspense>
+  );
+}
+
+function CallbackInner() {
   const sp = useSearchParams();
   const router = useRouter();
   const [msg, setMsg] = useState('Completing sign-in…');
@@ -35,6 +44,14 @@ export default function AuthCallbackPage() {
   return (
     <main style={{ maxWidth: 420, margin: '0 auto', padding: 16 }}>
       <p>{msg}</p>
+    </main>
+  );
+}
+
+function Fallback() {
+  return (
+    <main style={{ maxWidth: 420, margin: '0 auto', padding: 16 }}>
+      <p>Loading…</p>
     </main>
   );
 }
