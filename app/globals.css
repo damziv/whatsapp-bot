@@ -1,26 +1,43 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Tailwind plugins (v4) */
+@plugin "@tailwindcss/forms";
+@plugin "@tailwindcss/typography";
+
+/* Theme tokens to match the UI shell I shared */
+@theme {
+  /* Brand palette */
+  --color-brand-50:  #f4f7ff;
+  --color-brand-100: #e8efff;
+  --color-brand-200: #cfe0ff;
+  --color-brand-300: #a9c4ff;
+  --color-brand-400: #7da1ff;
+  --color-brand-500: #577fff;
+  --color-brand-600: #3d61f1;
+  --color-brand-700: #2f4bd1;
+  --color-brand-800: #263ca7;
+  --color-brand-900: #222f7e;
+
+  /* Radii */
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
+  --radius-3xl: 1.75rem;
+
+  /* Shadows */
+  --shadow-card: 0 8px 30px rgba(0,0,0,0.08);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Custom utilities used by the UI shell */
+@utility shadow-card {
+  box-shadow: var(--shadow-card);
+}
+@utility container-centered {
+  max-width: 72rem; /* ~6xl */
+  margin-inline: auto;
+  padding-inline: 1rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
+/* Base */
+:root { color-scheme: light dark; }
+html { scroll-behavior: smooth; }
+body { @apply antialiased bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100; }
