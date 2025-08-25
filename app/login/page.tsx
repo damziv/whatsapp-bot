@@ -1,7 +1,7 @@
 // app/login/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSupabaseBrowser } from '@/lib/supabase-browser';
 
@@ -10,7 +10,24 @@ export default function LoginPage() {
   const [sent, setSent] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(true); // check existing session
   const router = useRouter();
+
+  // If already signed in, redirect to portal
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const supabase = getSupabaseBrowser();
+      const { data } = await supabase.auth.getSession();
+      if (cancelled) return;
+      if (data.session) {
+        router.replace('/portal');
+      } else {
+        setChecking(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [router]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -39,6 +56,19 @@ export default function LoginPage() {
     router.push(`/dashboard${qs}`);
   };
 
+  // While checking the session, show a tiny placeholder to avoid flicker
+  if (checking) {
+    return (
+      <main className="min-h-screen bg-gradient-to-b from-brand-50 to-white px-4 py-10 dark:from-neutral-900 dark:to-neutral-950">
+        <div className="mx-auto w-full max-w-md">
+          <div className="rounded-2xl border border-black/5 bg-white p-6 text-sm shadow-card dark:border-white/10 dark:bg-white/5">
+            Checking session…
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-brand-50 to-white px-4 py-10 dark:from-neutral-900 dark:to-neutral-950">
       <div className="mx-auto w-full max-w-md">
@@ -55,7 +85,7 @@ export default function LoginPage() {
             <div className="space-y-2 text-center" aria-live="polite">
               <h2 className="text-lg font-semibold">Check your email</h2>
               <p className="text-sm text-neutral-600 dark:text-neutral-300">
-                We sent a sign‑in link to <span className="font-medium">{email}</span>. Open it on this device to continue.
+                We sent a sign-in link to <span className="font-medium">{email}</span>. Open it on this device to continue.
               </p>
             </div>
           ) : (
