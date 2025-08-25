@@ -1,6 +1,8 @@
+// app/portal/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 
 type Album = {
@@ -45,9 +47,20 @@ export default function PortalPage() {
         const res = await fetch('/api/my-data', {
           headers: { Authorization: `Bearer ${token}` },
         });
-        const json: MyData = await res.json();
-        if (!res.ok) throw new Error((json as any)?.error || 'Failed');
-        if (!cancelled) setData(json);
+        const payload = (await res.json()) as {
+          profile: MyData['profile'];
+          events: MyData['events'];
+          albums: MyData['albums'];
+          error?: string;
+        };
+        if (!res.ok || payload.error) throw new Error(payload.error || 'Failed');
+        if (!cancelled) {
+          setData({
+            profile: payload.profile,
+            events: payload.events,
+            albums: payload.albums,
+          });
+        }
       } catch (e) {
         if (!cancelled) setErr(e instanceof Error ? e.message : String(e));
       } finally {
@@ -104,7 +117,7 @@ export default function PortalPage() {
 
           return (
             <div key={a.id} style={{ display: 'flex', gap: 16, alignItems: 'center', border: '1px solid #eee', borderRadius: 8, padding: 12 }}>
-              <img src={qrImg} width={110} height={110} alt="QR" />
+              <Image src={qrImg} alt="QR" width={110} height={110} unoptimized />
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 600 }}>{labels[a.album_slug] || a.album_slug}</div>
                 <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 6 }}>

@@ -16,7 +16,7 @@ export default function AuthCallbackPage() {
       return;
     }
     (async () => {
-      const { data, error } = await supabaseBrowser.auth.exchangeCodeForSession(code);
+      const { error } = await supabaseBrowser.auth.exchangeCodeForSession(code);
       if (error) {
         setMsg('Sign-in failed.');
         return;
