@@ -1,9 +1,10 @@
-// app/portal/page.tsx
 'use client';
+
+export const dynamic = 'force-dynamic';
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { supabaseBrowser } from '@/lib/supabase-browser';
+import { getSupabaseBrowser } from '@/lib/supabase-browser';
 
 type Album = {
   id: string;
@@ -30,50 +31,52 @@ type MyData = {
 };
 
 export default function PortalPage() {
-  const [data, setData] = useState<MyData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const { data: sessionData } = await supabaseBrowser.auth.getSession();
-      const token = sessionData.session?.access_token;
-      if (!token) {
-        window.location.href = '/login';
-        return;
-      }
-      try {
-        const res = await fetch('/api/my-data', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const payload = (await res.json()) as {
-          profile: MyData['profile'];
-          events: MyData['events'];
-          albums: MyData['albums'];
-          error?: string;
-        };
-        if (!res.ok || payload.error) throw new Error(payload.error || 'Failed');
-        if (!cancelled) {
-          setData({
-            profile: payload.profile,
-            events: payload.events,
-            albums: payload.albums,
-          });
+    const [data, setData] = useState<MyData | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [err, setErr] = useState<string | null>(null);
+  
+    useEffect(() => {
+      let cancelled = false;
+      (async () => {
+        const supabase = getSupabaseBrowser();
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData.session?.access_token;
+        if (!token) {
+          window.location.href = '/login';
+          return;
         }
-      } catch (e) {
-        if (!cancelled) setErr(e instanceof Error ? e.message : String(e));
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
-
-  const signOut = async () => {
-    await supabaseBrowser.auth.signOut();
-    window.location.href = '/login';
-  };
+        try {
+          const res = await fetch('/api/my-data', {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const payload = (await res.json()) as {
+            profile: MyData['profile'];
+            events: MyData['events'];
+            albums: MyData['albums'];
+            error?: string;
+          };
+          if (!res.ok || payload.error) throw new Error(payload.error || 'Failed');
+          if (!cancelled) {
+            setData({
+              profile: payload.profile,
+              events: payload.events,
+              albums: payload.albums,
+            });
+          }
+        } catch (e) {
+          if (!cancelled) setErr(e instanceof Error ? e.message : String(e));
+        } finally {
+          if (!cancelled) setLoading(false);
+        }
+      })();
+      return () => { cancelled = true; };
+    }, []);
+  
+    const signOut = async () => {
+      const supabase = getSupabaseBrowser();
+      await supabase.auth.signOut();
+      window.location.href = '/login';
+    };
 
   if (loading) return <main style={{ maxWidth: 800, margin: '0 auto', padding: 16 }}><p>Loading…</p></main>;
   if (err) return <main style={{ maxWidth: 800, margin: '0 auto', padding: 16 }}><p style={{ color: 'crimson' }}>{err}</p></main>;

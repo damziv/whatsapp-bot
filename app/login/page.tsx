@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabaseBrowser } from '@/lib/supabase-browser';
+import { getSupabaseBrowser } from '@/lib/supabase-browser';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -16,9 +16,9 @@ export default function LoginPage() {
     setErr(null);
     setLoading(true);
     try {
-      const origin =
-        typeof window !== 'undefined' ? window.location.origin : '';
-      const { error } = await supabaseBrowser.auth.signInWithOtp({
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const supabase = getSupabaseBrowser();
+      const { error } = await supabase.auth.signInWithOtp({
         email,
         options: { emailRedirectTo: `${origin}/auth/callback` },
       });
@@ -30,7 +30,6 @@ export default function LoginPage() {
       setLoading(false);
     }
   }
-
 
   const goCreate = () => {
     const qs = email ? `?email=${encodeURIComponent(email)}` : '';

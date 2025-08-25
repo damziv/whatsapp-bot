@@ -1,8 +1,10 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { supabaseBrowser } from '@/lib/supabase-browser';
+import { getSupabaseBrowser } from '@/lib/supabase-browser';
 
 export default function AuthCallbackPage() {
   const sp = useSearchParams();
@@ -16,13 +18,17 @@ export default function AuthCallbackPage() {
       return;
     }
     (async () => {
-      const { error } = await supabaseBrowser.auth.exchangeCodeForSession(code);
-      if (error) {
+      try {
+        const supabase = getSupabaseBrowser();
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (error) {
+          setMsg('Sign-in failed.');
+          return;
+        }
+        router.replace('/portal');
+      } catch {
         setMsg('Sign-in failed.');
-        return;
       }
-      // Go to the user portal
-      router.replace('/portal');
     })();
   }, [sp, router]);
 
