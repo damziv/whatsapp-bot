@@ -199,7 +199,7 @@ export async function POST(req: NextRequest) {
           await sendWhatsApp(
             waPhoneId,
             from,
-            'Send "ALBUM <code>" to choose an album (e.g., ALBUM K3H9WT). Then send photos here. 📸'
+            'Pošalji "ALBUM <code>" kako bi odabrao album (npr., ALBUM K3H9WT). Nakon toga šalji slike. 📸'
           );
           return;
         }
@@ -207,11 +207,11 @@ export async function POST(req: NextRequest) {
         try {
           const album = await getAlbumByCode(code);
           if (!album) {
-            await sendWhatsApp(waPhoneId, from, 'Unknown album code. Please check and try again.');
+            await sendWhatsApp(waPhoneId, from, 'Nepoznata šifra albuma. Molimo provjerite i pokušajte ponovno.');
             return;
           }
           if (!album.is_active) {
-            await sendWhatsApp(waPhoneId, from, 'This album is inactive.');
+            await sendWhatsApp(waPhoneId, from, 'Ovaj album nije aktivan.');
             return;
           }
           const now = new Date();
@@ -219,7 +219,7 @@ export async function POST(req: NextRequest) {
             await sendWhatsApp(
               waPhoneId,
               from,
-              'This album is closed for uploads (outside the allowed time window).'
+              'Ovaj album još uvijek nije otovore (izvan dozvoljenog vremena.'
             );
             return;
           }
@@ -227,15 +227,15 @@ export async function POST(req: NextRequest) {
           await sendWhatsApp(
             waPhoneId,
             from,
-            `Album set ✅
-Event: ${album.album_slug}
-Window: ${fmt(album.start_at)} → ${fmt(album.end_at)}
-Now send your photos here.`
+            `Album postavljen, nema potrebe ponovno skenirati link ✅
+Događaj: ${album.album_slug}
+Vrijeme: ${fmt(album.start_at)} → ${fmt(album.end_at)}
+Sada šaljite slike.`
           );
         } catch (err: unknown) {
           const message = err instanceof Error ? err.message : String(err);
           console.error('album bind error:', message);
-          await sendWhatsApp(waPhoneId, from, 'Error setting album. Please try again.');
+          await sendWhatsApp(waPhoneId, from, 'Greška u postavljanju albuma. Molimo pokušajte ponovno.');
         }
         return;
       }
@@ -245,7 +245,7 @@ Now send your photos here.`
         await sendWhatsApp(
           waPhoneId,
           from,
-          'Only photos are allowed for this gallery. 📸\nTip: send “ALBUM <code>” first to choose an album.'
+          'Samo su slike dozvoljene u ovom albumu. 📸\nUpute: pošalji “ALBUM <code>” kako bi odabrao album.'
         );
         return;
       }
@@ -272,14 +272,14 @@ Now send your photos here.`
         const binding2 = album ? { albums: album } : await getBindingWithAlbum(from);
         const finalAlbum = binding2?.albums;
         if (!finalAlbum) {
-          await sendWhatsApp(waPhoneId, from, 'Please choose an album first: send "ALBUM <code>" (see QR code).');
+          await sendWhatsApp(waPhoneId, from, 'Molimo prvo odaberite album: pošaljite "ALBUM <code>" (skeniraj QR kod).');
           return;
         }
 
         // Enforce window
         const now = new Date();
         if (!withinWindow(now, finalAlbum.start_at, finalAlbum.end_at)) {
-          await sendWhatsApp(waPhoneId, from, 'This album is currently closed for uploads. ⏱️');
+          await sendWhatsApp(waPhoneId, from, 'Ovaj album je trenutno zatvoren. ⏱️');
           return;
         }
 
@@ -295,7 +295,7 @@ Now send your photos here.`
           .eq('content_hash', hash)
           .limit(1);
         if (!dup.error && dup.data && dup.data.length > 0) {
-          await sendWhatsApp(waPhoneId, from, 'Looks like a duplicate photo. Skipped. 😉');
+          await sendWhatsApp(waPhoneId, from, 'Izgleda kao duplikat. Preskočeno. 😉');
           return;
         }
 
@@ -319,11 +319,11 @@ Now send your photos here.`
           album_slug: finalAlbum.album_slug
         });
 
-        await sendWhatsApp(waPhoneId, from, 'Uploaded ✔️ Thanks!');
+        await sendWhatsApp(waPhoneId, from, 'Postavljeno ✔️ Hvala!');
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
         console.error('Upload error:', message);
-        await sendWhatsApp(waPhoneId, from, 'Upload failed. Please try again.');
+        await sendWhatsApp(waPhoneId, from, 'Upss greška. Molimo pokušajte ponovno.');
       }
     })
   );
