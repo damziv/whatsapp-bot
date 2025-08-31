@@ -24,7 +24,20 @@ async function main() {
   let sent = 0, failed = 0;
 
   for (const r of rows) {
-    const body = `Pozdrav šalje bot 📸 Ovo je test, no worry`;
+    const phoneNumber = "385989054083"; // <-- your WABA number in intl format
+    const messageText = "ALBUM DJEVOJACKA";
+    const waLink = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(messageText)}`;
+  
+    const body = 
+      `Pozdrav! Danas je Anđelina djevojačka! 🎉🍻
+      
+      Slikaj i šalji uspomene na WhatsApp:
+      ${waLink}
+      
+      ➡️ Otvori link  
+      ➡️ Slikaj i šalji slike  
+      
+      Sve ide direktno mladencima za uspomenu ❤️`;
 
     try {
       await client.messages.create({

@@ -1,84 +1,65 @@
 // app/api/gallery/route.ts
-export const runtime = 'nodejs';
-
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseAdmin = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE!
-);
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
-// How long signed URLs stay valid (seconds)
-const SIGNED_SECONDS = 60 * 60; // 1 hour
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!; 
+// Use service role because you need to list bucket contents
 
-type MediaRow = {
-  id: string;
-  storage_key: string;
-  created_at: string;
-  mime: string | null;
-  event_slug?: string | null;
-  album_slug?: string | null;
-};
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-export async function GET(req: NextRequest) {
+export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const code = searchParams.get('code');
+  const code = searchParams.get('code') || '';
 
-  let filter: { event_slug?: string; album_slug?: string } = {};
+  const BUCKET = 'photos'; // change if your bucket has another name
+  const prefix = code ? `albums/${code}/` : '';
 
-  if (code) {
-    const { data: album, error: albErr } = await supabaseAdmin
-      .from('albums')
-      .select('event_slug, album_slug')
-      .eq('code', code)
-      .maybeSingle();
+  const pageSize = 100;
+  let offset = 0;
+  const all: any[] = [];
 
-    if (albErr) {
-      return NextResponse.json({ error: albErr.message }, { status: 500 });
-    }
-    if (!album) {
-      return NextResponse.json({ items: [] });
-    }
-
-    filter = { event_slug: album.event_slug, album_slug: album.album_slug };
-  }
-
-  let query = supabaseAdmin
-    .from('media')
-    .select('id, storage_key, created_at, mime, event_slug, album_slug')
-    .order('created_at', { ascending: false })
-    .limit(100);
-
-  if (filter.event_slug && filter.album_slug) {
-    query = query
-      .eq('event_slug', filter.event_slug)
-      .eq('album_slug', filter.album_slug);
-  }
-
-  const { data, error } = await query;
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  const rows = (data ?? []) as MediaRow[];
-  const items: { id: string; url: string; created_at: string; mime: string | null }[] = [];
-
-  for (const r of rows) {
-    const { data: signed, error: signErr } = await supabaseAdmin.storage
-      .from('media')
-      .createSignedUrl(r.storage_key, SIGNED_SECONDS);
-
-    if (signErr || !signed?.signedUrl) continue;
-
-    items.push({
-      id: r.id,
-      url: signed.signedUrl,
-      created_at: r.created_at,
-      mime: r.mime,
+  while (true) {
+    const { data, error } = await supabase.storage.from(BUCKET).list(prefix, {
+      limit: pageSize,
+      offset,
+      sortBy: { column: 'created_at', order: 'asc' },
     });
+
+    if (error) {
+      console.error('storage.list error', error);
+      return NextResponse.json({ items: [], error: error.message }, { status: 500 });
+    }
+    if (!data || data.length === 0) break;
+
+    for (const f of data) {
+      if (!f.name) continue; // skip folder placeholders
+      all.push(f);
+    }
+
+    if (data.length < pageSize) break;
+    offset += pageSize;
   }
 
-  return NextResponse.json({ items });
+  all.sort((a, b) => {
+    const da = new Date(a.created_at || a.updated_at || 0).getTime();
+    const db = new Date(b.created_at || b.updated_at || 0).getTime();
+    return db - da;
+  });
+
+  const items = all.map((f) => {
+    const path = `${prefix}${f.name}`;
+    const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(path);
+    return {
+      id: path,
+      url: pub.publicUrl,
+      created_at: f.created_at || f.updated_at || new Date().toISOString(),
+      mime: f.metadata?.mimetype ?? null,
+    };
+  });
+
+  return NextResponse.json({ items }, { headers: { 'Cache-Control': 'no-store' } });
 }
