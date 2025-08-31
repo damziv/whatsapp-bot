@@ -1,98 +1,84 @@
 // app/api/gallery/route.ts
-import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-// (optional) force Node runtime if you want:
 export const runtime = 'nodejs';
 
-type FileRow = {
-  name: string;
-  created_at?: string;
-  updated_at?: string;
-  metadata?: { mimetype?: string | null } | null;
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseAdmin = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE!
+);
+
+// How long signed URLs stay valid (seconds)
+const SIGNED_SECONDS = 60 * 60; // 1 hour
+
+type MediaRow = {
+  id: string;
+  storage_key: string;
+  created_at: string;
+  mime: string | null;
+  event_slug?: string | null;
+  album_slug?: string | null;
 };
 
-export async function GET(req: Request) {
-  // 👇 Read envs *inside* the handler to avoid build-time crashes
-  const supabaseUrl =
-    process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '';
-
-  // Prefer service role for private buckets / broad list() access.
-  // Fallback to anon for public buckets with permissive policies.
-  const supabaseKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    process.env.SUPABASE_ANON_KEY ||
-    '';
-
-  if (!supabaseUrl || !supabaseKey) {
-    console.error('Missing Supabase envs. Check NEXT_PUBLIC_SUPABASE_URL and a key.');
-    return NextResponse.json(
-      { items: [], error: 'Supabase configuration missing on the server.' },
-      { status: 500 }
-    );
-  }
-
-  const supabase = createClient(supabaseUrl, supabaseKey, {
-    auth: { persistSession: false },
-  });
-
+export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const code = searchParams.get('code') || '';
+  const code = searchParams.get('code');
 
-  const BUCKET = 'photos'; // change if needed
-  const prefix = code ? `albums/${code}/` : '';
+  let filter: { event_slug?: string; album_slug?: string } = {};
 
-  const pageSize = 100;
-  let offset = 0;
-  const all: FileRow[] = [];
+  if (code) {
+    const { data: album, error: albErr } = await supabaseAdmin
+      .from('albums')
+      .select('event_slug, album_slug')
+      .eq('code', code)
+      .maybeSingle();
 
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    const { data, error } = await supabase.storage.from(BUCKET).list(prefix, {
-      limit: pageSize,
-      offset,
-      sortBy: { column: 'created_at', order: 'asc' },
-    });
-
-    if (error) {
-      console.error('storage.list error', error);
-      return NextResponse.json({ items: [], error: error.message }, { status: 500 });
+    if (albErr) {
+      return NextResponse.json({ error: albErr.message }, { status: 500 });
     }
-    if (!data || data.length === 0) break;
-
-    for (const f of data) {
-      if (!f.name) continue;
-      all.push({
-        name: f.name,
-        created_at: (f as FileRow).created_at,
-        updated_at: (f as FileRow).updated_at,
-        metadata: (f as FileRow).metadata ?? null,
-      });
+    if (!album) {
+      return NextResponse.json({ items: [] });
     }
 
-    if (data.length < pageSize) break;
-    offset += pageSize;
+    filter = { event_slug: album.event_slug, album_slug: album.album_slug };
   }
 
-  all.sort((a, b) => {
-    const da = new Date(a.created_at || a.updated_at || 0).getTime();
-    const db = new Date(b.created_at || b.updated_at || 0).getTime();
-    return db - da;
-  });
+  let query = supabaseAdmin
+    .from('media')
+    .select('id, storage_key, created_at, mime, event_slug, album_slug')
+    .order('created_at', { ascending: false })
+    .limit(100);
 
-  const items = all.map((f) => {
-    const path = `${prefix}${f.name}`;
-    const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(path);
-    return {
-      id: path,
-      url: pub.publicUrl,
-      created_at: f.created_at || f.updated_at || new Date().toISOString(),
-      mime: f.metadata?.mimetype ?? null,
-    };
-  });
+  if (filter.event_slug && filter.album_slug) {
+    query = query
+      .eq('event_slug', filter.event_slug)
+      .eq('album_slug', filter.album_slug);
+  }
 
-  return NextResponse.json({ items }, { headers: { 'Cache-Control': 'no-store' } });
+  const { data, error } = await query;
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  const rows = (data ?? []) as MediaRow[];
+  const items: { id: string; url: string; created_at: string; mime: string | null }[] = [];
+
+  for (const r of rows) {
+    const { data: signed, error: signErr } = await supabaseAdmin.storage
+      .from('media')
+      .createSignedUrl(r.storage_key, SIGNED_SECONDS);
+
+    if (signErr || !signed?.signedUrl) continue;
+
+    items.push({
+      id: r.id,
+      url: signed.signedUrl,
+      created_at: r.created_at,
+      mime: r.mime,
+    });
+  }
+
+  return NextResponse.json({ items });
 }
