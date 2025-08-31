@@ -6,22 +6,30 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!; 
-// Use service role because you need to list bucket contents
-
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!; // needs list access
 const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Minimal type compatible with Supabase Storage list() output
+type FileRow = {
+  name: string;
+  created_at?: string;
+  updated_at?: string;
+  metadata?: { mimetype?: string | null } | null;
+};
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const code = searchParams.get('code') || '';
 
-  const BUCKET = 'photos'; // change if your bucket has another name
+  const BUCKET = 'photos'; // adjust if needed
   const prefix = code ? `albums/${code}/` : '';
 
   const pageSize = 100;
   let offset = 0;
-  const all: any[] = [];
+  const all: FileRow[] = [];
 
+  // paginate until exhausted
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     const { data, error } = await supabase.storage.from(BUCKET).list(prefix, {
       limit: pageSize,
@@ -33,17 +41,24 @@ export async function GET(req: Request) {
       console.error('storage.list error', error);
       return NextResponse.json({ items: [], error: error.message }, { status: 500 });
     }
+
     if (!data || data.length === 0) break;
 
     for (const f of data) {
-      if (!f.name) continue; // skip folder placeholders
-      all.push(f);
+      if (!f.name) continue; // skip “folders”
+      all.push({
+        name: f.name,
+        created_at: (f as FileRow).created_at,
+        updated_at: (f as FileRow).updated_at,
+        metadata: (f as FileRow).metadata ?? null,
+      });
     }
 
     if (data.length < pageSize) break;
     offset += pageSize;
   }
 
+  // newest first
   all.sort((a, b) => {
     const da = new Date(a.created_at || a.updated_at || 0).getTime();
     const db = new Date(b.created_at || b.updated_at || 0).getTime();
