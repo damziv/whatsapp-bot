@@ -1,73 +1,84 @@
 // app/api/gallery/route.ts
-import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import type { FileObject } from '@supabase/storage-js';
-
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 export const runtime = 'nodejs';
 
-function env(name: string) {
-  return process.env[name] ?? '';
-}
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
-export async function GET(req: Request) {
-  const url = new URL(req.url);
-  const code = url.searchParams.get('code') || '';
+const supabaseAdmin = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE!
+);
 
-  const supabaseUrl = env('NEXT_PUBLIC_SUPABASE_URL') || env('SUPABASE_URL');
-  const supabaseKey =
-    env('SUPABASE_SERVICE_ROLE_KEY') ||
-    env('NEXT_PUBLIC_SUPABASE_ANON_KEY') ||
-    env('SUPABASE_ANON_KEY');
+// How long signed URLs stay valid (seconds)
+const SIGNED_SECONDS = 60 * 60; // 1 hour
 
-  if (!supabaseUrl || !supabaseKey) {
-    console.error('Missing Supabase envs');
-    return NextResponse.json({ items: [], error: 'Supabase not configured' }, { status: 500 });
-  }
+type MediaRow = {
+  id: string;
+  storage_key: string;
+  created_at: string;
+  mime: string | null;
+  event_slug?: string | null;
+  album_slug?: string | null;
+};
 
-  const supabase = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } });
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const code = searchParams.get('code');
 
-  const BUCKET = 'photos'; // change if different
-  const prefix = code ? `albums/${code}/` : '';
+  let filter: { event_slug?: string; album_slug?: string } = {};
 
-  const pageSize = 1000; // Supabase max per call
-  let offset = 0;
-  const collected: FileObject[] = [];
+  if (code) {
+    const { data: album, error: albErr } = await supabaseAdmin
+      .from('albums')
+      .select('event_slug, album_slug')
+      .eq('code', code)
+      .maybeSingle();
 
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    const { data, error } = await supabase.storage.from(BUCKET).list(prefix, {
-      limit: pageSize,
-      offset,
-      // 'name' sort is safest for compatibility
-      sortBy: { column: 'name', order: 'asc' },
-    });
-
-    if (error) {
-      console.error('storage.list error', error);
-      return NextResponse.json({ items: [], error: error.message }, { status: 500 });
+    if (albErr) {
+      return NextResponse.json({ error: albErr.message }, { status: 500 });
+    }
+    if (!album) {
+      return NextResponse.json({ items: [] });
     }
 
-    const batch = (data ?? []).filter((f) => !!f.name); // keep files, skip folders
-    if (batch.length === 0) break;
-
-    collected.push(...batch);
-    if (batch.length < pageSize) break;
-    offset += pageSize;
+    filter = { event_slug: album.event_slug, album_slug: album.album_slug };
   }
 
-  // Map to your front-end contract
-  const items = collected.map((f) => {
-    const path = `${prefix}${f.name}`;
-    const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(path); // for PUBLIC bucket
-    return {
-      id: path,
-      url: pub.publicUrl,
-      created_at: f.updated_at ?? f.created_at ?? new Date().toISOString(),
-      mime: (f.metadata as { mimetype?: string } | null)?.mimetype ?? null,
-    };
-  });
+  let query = supabaseAdmin
+    .from('media')
+    .select('id, storage_key, created_at, mime, event_slug, album_slug')
+    .order('created_at', { ascending: false })
+    .limit(100);
 
-  return NextResponse.json({ items }, { headers: { 'Cache-Control': 'no-store' } });
+  if (filter.event_slug && filter.album_slug) {
+    query = query
+      .eq('event_slug', filter.event_slug)
+      .eq('album_slug', filter.album_slug);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  const rows = (data ?? []) as MediaRow[];
+  const items: { id: string; url: string; created_at: string; mime: string | null }[] = [];
+
+  for (const r of rows) {
+    const { data: signed, error: signErr } = await supabaseAdmin.storage
+      .from('media')
+      .createSignedUrl(r.storage_key, SIGNED_SECONDS);
+
+    if (signErr || !signed?.signedUrl) continue;
+
+    items.push({
+      id: r.id,
+      url: signed.signedUrl,
+      created_at: r.created_at,
+      mime: r.mime,
+    });
+  }
+
+  return NextResponse.json({ items });
 }
