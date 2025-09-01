@@ -219,7 +219,7 @@ export async function POST(req: NextRequest) {
             await sendWhatsApp(
               waPhoneId,
               from,
-              'Ovaj album još uvijek nije otovore (izvan dozvoljenog vremena.'
+              'Ovaj album još uvijek nije otvoren (izvan dozvoljenog vremena).'
             );
             return;
           }
