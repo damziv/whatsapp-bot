@@ -11,7 +11,9 @@ function base64urlToBuf(s: string) {
   return Buffer.from(s, 'base64');
 }
 
-function verifyOwnerToken(token: string) {
+type OwnerTokenPayload = { album_id: string; code: string; exp: number };
+
+function verifyOwnerToken(token: string): OwnerTokenPayload | null {
   const secret = process.env.OWNER_SESSION_SECRET || process.env.OWNER_PIN_SALT || 'dev-secret';
 
   const parts = token.split('.');
@@ -25,12 +27,18 @@ function verifyOwnerToken(token: string) {
   if (expected.length !== got.length) return null;
   if (!crypto.timingSafeEqual(expected, got)) return null;
 
-  const payload = JSON.parse(base64urlToBuf(p).toString('utf8')) as any;
-  if (!payload?.exp || typeof payload.exp !== 'number') return null;
+  const raw: unknown = JSON.parse(base64urlToBuf(p).toString('utf8'));
+
+  if (typeof raw !== 'object' || raw === null) return null;
+  const payload = raw as Partial<OwnerTokenPayload>;
+
+  if (!payload.exp || typeof payload.exp !== 'number') return null;
   if (Date.now() / 1000 > payload.exp) return null;
 
-  if (!payload?.album_id) return null;
-  return payload as { album_id: string; code: string; exp: number };
+  if (!payload.album_id || typeof payload.album_id !== 'string') return null;
+  if (!payload.code || typeof payload.code !== 'string') return null;
+
+  return payload as OwnerTokenPayload;
 }
 
 function getBearer(req: NextRequest) {
@@ -38,14 +46,17 @@ function getBearer(req: NextRequest) {
   return authz.startsWith('Bearer ') ? authz.slice(7) : null;
 }
 
-export async function DELETE(req: NextRequest, ctx: { params: { id: string } }) {
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const token = getBearer(req);
   if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const payload = verifyOwnerToken(token);
   if (!payload) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  const id = ctx.params.id;
+  const { id } = await params;
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
   // Resolve album -> event_slug/album_slug to ensure ownership
