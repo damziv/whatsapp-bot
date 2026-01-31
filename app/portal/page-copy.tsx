@@ -6,8 +6,10 @@ import { useEffect, useState } from 'react';
 import { getSupabaseBrowser } from '@/lib/supabase-browser';
 import PortalClient from './portal-client';
 
+type Photographer = Record<string, unknown>;
+
 type MeResponse =
-  | { isPhotographer: true; isActive: boolean; photographer: any }
+  | { isPhotographer: true; isActive: boolean; photographer: Photographer }
   | { isPhotographer: false; isActive: false }
   | { error: string };
 

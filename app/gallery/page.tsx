@@ -1,7 +1,7 @@
 // app/gallery/page.tsx
 'use client';
 
-import { Suspense, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 
@@ -37,22 +37,24 @@ function GalleryInner() {
   const searchParams = useSearchParams();
   const code = searchParams.get('code') || '';
 
-  const reload = async () => {
+  const reload = useCallback(async () => {
     setLoading(true);
     const qs = code ? `?code=${encodeURIComponent(code)}` : '';
     const [g, m] = await Promise.all([
       fetch(`/api/gallery${qs}`).then((r) => r.json()),
-      code ? fetch(`/api/album?code=${encodeURIComponent(code)}`).then((r) => (r.ok ? r.json() : null)) : Promise.resolve(null),
+      code
+        ? fetch(`/api/album?code=${encodeURIComponent(code)}`).then((r) => (r.ok ? r.json() : null))
+        : Promise.resolve(null),
     ]);
+
     setItems((g?.items as Item[]) || []);
     setMeta(m as AlbumMeta | null);
     setLoading(false);
-  };
+  }, [code]);
 
   useEffect(() => {
     reload();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [code]);
+  }, [reload]);
 
   // open lightbox
   const openAt = (i: number) => {
@@ -63,14 +65,17 @@ function GalleryInner() {
   // keyboard navigation
   useEffect(() => {
     if (!isOpen) return;
+
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setIsOpen(false);
       if (e.key === 'ArrowRight') setIdx((p) => (p + 1) % items.length);
       if (e.key === 'ArrowLeft') setIdx((p) => (p - 1 + items.length) % items.length);
     };
+
     window.addEventListener('keydown', onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
+
     return () => {
       window.removeEventListener('keydown', onKey);
       document.body.style.overflow = prev;
@@ -80,19 +85,28 @@ function GalleryInner() {
   const loginOwner = async () => {
     setPinErr(null);
     setPinLoading(true);
+
     try {
       const res = await fetch('/api/owner/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code, pin }),
       });
-      const out = await res.json();
-      if (!res.ok) throw new Error(out?.error || 'Invalid PIN');
+
+      const out: unknown = await res.json();
+      const errMsg =
+        typeof out === 'object' && out !== null && 'error' in out && typeof (out as { error?: unknown }).error === 'string'
+          ? (out as { error: string }).error
+          : 'Invalid PIN';
+
+      if (!res.ok) throw new Error(errMsg);
+
       setIsOwner(true);
       setPinOpen(false);
       setPin('');
-    } catch (e: any) {
-      setPinErr(e?.message || 'Invalid PIN');
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Invalid PIN';
+      setPinErr(message);
     } finally {
       setPinLoading(false);
     }
@@ -100,16 +114,25 @@ function GalleryInner() {
 
   const deleteItem = async (media_id: string) => {
     if (!confirm('Delete this photo?')) return;
+
     const res = await fetch('/api/owner/delete', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ media_id, code }),
     });
-    const out = await res.json().catch(() => ({}));
+
+    const out: unknown = await res.json().catch(() => ({} as unknown));
+
+    const errMsg =
+      typeof out === 'object' && out !== null && 'error' in out && typeof (out as { error?: unknown }).error === 'string'
+        ? (out as { error: string }).error
+        : 'Delete failed';
+
     if (!res.ok) {
-      alert(out?.error || 'Delete failed');
+      alert(errMsg);
       return;
     }
+
     await reload();
   };
 
@@ -155,12 +178,7 @@ function GalleryInner() {
             {items.map((it, i) => (
               <div key={it.id} className="mb-2 break-inside-avoid">
                 <div className="relative overflow-hidden rounded-2xl ring-1 ring-black/5 dark:ring-white/10">
-                  <button
-                    type="button"
-                    onClick={() => openAt(i)}
-                    className="block w-full"
-                    aria-label="Open image"
-                  >
+                  <button type="button" onClick={() => openAt(i)} className="block w-full" aria-label="Open image">
                     <Image src={it.url} alt="" width={1200} height={800} unoptimized className="h-auto w-full" />
                   </button>
 
@@ -250,7 +268,7 @@ function GallerySkeleton() {
   );
 }
 
-/* === Lightbox (unchanged) ======================================= */
+/* === Lightbox (typed + Image) ======================================= */
 function Lightbox({
   items,
   index,
@@ -338,9 +356,12 @@ function Lightbox({
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        <img
+        <Image
           src={current.url}
           alt=""
+          width={2000}
+          height={2000}
+          unoptimized
           className="h-full max-h-[90vh] w-auto max-w-[95vw] rounded-2xl object-contain ring-1 ring-white/10"
         />
       </div>
