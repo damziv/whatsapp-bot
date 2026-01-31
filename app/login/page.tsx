@@ -5,9 +5,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSupabaseBrowser } from '@/lib/supabase-browser';
 
-const COOLDOWN_MS = 60_000;
+const DEFAULT_COOLDOWN_MS = 90_000;
 
-// Persist cooldown per email (so different emails don’t block each other)
 function cooldownKey(email: string) {
   return `otpCooldownUntil:${email.trim().toLowerCase()}`;
 }
@@ -47,7 +46,7 @@ export default function LoginPage() {
 
   const emailNorm = useMemo(() => email.trim().toLowerCase(), [email]);
 
-  // Timer tick (for countdown)
+  // Timer tick for countdown
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 250);
     return () => clearInterval(t);
@@ -55,8 +54,7 @@ export default function LoginPage() {
 
   // Load cooldown for current email (persists across refresh on mobile)
   useEffect(() => {
-    const stored = readCooldownUntil(emailNorm);
-    setCooldownUntil(stored);
+    setCooldownUntil(readCooldownUntil(emailNorm));
   }, [emailNorm]);
 
   const cooldownActive = cooldownUntil > now;
@@ -82,11 +80,9 @@ export default function LoginPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    // hard guard against double tap / duplicate submit
     if (submitLockRef.current) return;
     if (loading) return;
 
-    // guard across reloads (localStorage persisted)
     const stored = readCooldownUntil(emailNorm);
     if (stored > Date.now()) {
       setCooldownUntil(stored);
@@ -99,37 +95,42 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const supabase = getSupabaseBrowser();
-
-      const redirectTo =
-        typeof window !== 'undefined'
-          ? `${window.location.origin}/auth/callback`
-          : '';
-
-      const { error } = await supabase.auth.signInWithOtp({
-        email: emailNorm,
-        options: { emailRedirectTo: redirectTo },
+      const res = await fetch('/api/auth/request-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: emailNorm }),
       });
 
-      if (error) throw error;
+      const out: unknown = await res.json().catch(() => ({}));
+      const errMsg =
+        typeof out === 'object' && out !== null && 'error' in out && typeof (out as { error?: unknown }).error === 'string'
+          ? (out as { error: string }).error
+          : res.ok
+            ? ''
+            : 'Request failed';
 
-      const until = Date.now() + COOLDOWN_MS;
+      if (!res.ok) {
+        // If server returns Retry-After, use it for cooldown
+        const ra = res.headers.get('retry-after');
+        const raMs = ra && Number.isFinite(Number(ra)) ? Number(ra) * 1000 : DEFAULT_COOLDOWN_MS;
+
+        if (res.status === 429) {
+          const until = Date.now() + Math.max(30_000, raMs);
+          setCooldownUntil(until);
+          writeCooldownUntil(emailNorm, until);
+        }
+
+        throw new Error(errMsg);
+      }
+
+      const until = Date.now() + DEFAULT_COOLDOWN_MS;
       setCooldownUntil(until);
       writeCooldownUntil(emailNorm, until);
 
       setSent(true);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
-
-      // If Supabase rate-limited, enforce cooldown anyway (persisted)
-      if (msg.toLowerCase().includes('rate limit')) {
-        const until = Date.now() + COOLDOWN_MS;
-        setCooldownUntil(until);
-        writeCooldownUntil(emailNorm, until);
-        setErr('Too many requests. Please wait a minute and try again.');
-      } else {
-        setErr(msg);
-      }
+      setErr(msg);
     } finally {
       setLoading(false);
       submitLockRef.current = false;
@@ -166,8 +167,7 @@ export default function LoginPage() {
             <div className="space-y-2 text-center" aria-live="polite">
               <h2 className="text-lg font-semibold">Check your email</h2>
               <p className="text-sm text-neutral-600 dark:text-neutral-300">
-                We sent a sign-in link to <span className="font-medium">{emailNorm}</span>. Open it on this device to
-                continue.
+                We sent a sign-in link to <span className="font-medium">{emailNorm}</span>. Open it on this device to continue.
               </p>
 
               {secondsLeft > 0 ? (
@@ -175,9 +175,7 @@ export default function LoginPage() {
                   You can request a new link in {secondsLeft}s.
                 </p>
               ) : (
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                  Didn’t get it? Check spam/junk and wait a moment before retrying.
-                </p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">Didn’t get it? Check spam/junk.</p>
               )}
 
               <button
@@ -224,10 +222,6 @@ export default function LoginPage() {
                   {err}
                 </p>
               )}
-
-              <p className="mt-3 text-center text-xs text-neutral-500 dark:text-neutral-400">
-                Tip: make sure you added <span className="font-medium">http://localhost:3000/*</span> to Supabase Redirect URLs.
-              </p>
             </form>
           )}
         </div>
