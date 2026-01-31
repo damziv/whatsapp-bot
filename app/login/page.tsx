@@ -1,9 +1,36 @@
 // app/login/page.tsx
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSupabaseBrowser } from '@/lib/supabase-browser';
+
+const COOLDOWN_MS = 60_000;
+
+// Persist cooldown per email (so different emails don’t block each other)
+function cooldownKey(email: string) {
+  return `otpCooldownUntil:${email.trim().toLowerCase()}`;
+}
+
+function readCooldownUntil(email: string): number {
+  if (typeof window === 'undefined') return 0;
+  try {
+    const raw = window.localStorage.getItem(cooldownKey(email));
+    const n = raw ? Number(raw) : 0;
+    return Number.isFinite(n) ? n : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function writeCooldownUntil(email: string, until: number) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(cooldownKey(email), String(until));
+  } catch {
+    // ignore
+  }
+}
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -12,18 +39,28 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
 
-  // cooldown (prevents hammering OTP)
   const [cooldownUntil, setCooldownUntil] = useState<number>(0);
   const [now, setNow] = useState<number>(() => Date.now());
 
   const submitLockRef = useRef(false);
   const router = useRouter();
 
-  // tick for countdown UI
+  const emailNorm = useMemo(() => email.trim().toLowerCase(), [email]);
+
+  // Timer tick (for countdown)
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 250);
     return () => clearInterval(t);
   }, []);
+
+  // Load cooldown for current email (persists across refresh on mobile)
+  useEffect(() => {
+    const stored = readCooldownUntil(emailNorm);
+    setCooldownUntil(stored);
+  }, [emailNorm]);
+
+  const cooldownActive = cooldownUntil > now;
+  const secondsLeft = cooldownActive ? Math.ceil((cooldownUntil - now) / 1000) : 0;
 
   // If already signed in, redirect to portal
   useEffect(() => {
@@ -42,16 +79,20 @@ export default function LoginPage() {
     };
   }, [router]);
 
-  const cooldownActive = cooldownUntil > now;
-  const secondsLeft = cooldownActive ? Math.ceil((cooldownUntil - now) / 1000) : 0;
-
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    // hard guard against double submit / double-tap
+    // hard guard against double tap / duplicate submit
     if (submitLockRef.current) return;
     if (loading) return;
-    if (cooldownActive) return;
+
+    // guard across reloads (localStorage persisted)
+    const stored = readCooldownUntil(emailNorm);
+    if (stored > Date.now()) {
+      setCooldownUntil(stored);
+      setErr('Please wait a moment before requesting another link.');
+      return;
+    }
 
     submitLockRef.current = true;
     setErr(null);
@@ -66,22 +107,26 @@ export default function LoginPage() {
           : '';
 
       const { error } = await supabase.auth.signInWithOtp({
-        email,
+        email: emailNorm,
         options: { emailRedirectTo: redirectTo },
       });
 
       if (error) throw error;
 
-      // start resend cooldown (60s)
-      setCooldownUntil(Date.now() + 60_000);
+      const until = Date.now() + COOLDOWN_MS;
+      setCooldownUntil(until);
+      writeCooldownUntil(emailNorm, until);
+
       setSent(true);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
 
-      // make rate limiting obvious to the user
+      // If Supabase rate-limited, enforce cooldown anyway (persisted)
       if (msg.toLowerCase().includes('rate limit')) {
+        const until = Date.now() + COOLDOWN_MS;
+        setCooldownUntil(until);
+        writeCooldownUntil(emailNorm, until);
         setErr('Too many requests. Please wait a minute and try again.');
-        setCooldownUntil(Date.now() + 60_000);
       } else {
         setErr(msg);
       }
@@ -121,8 +166,8 @@ export default function LoginPage() {
             <div className="space-y-2 text-center" aria-live="polite">
               <h2 className="text-lg font-semibold">Check your email</h2>
               <p className="text-sm text-neutral-600 dark:text-neutral-300">
-                We sent a sign-in link to <span className="font-medium">{email}</span>.
-                Open it on this device to continue.
+                We sent a sign-in link to <span className="font-medium">{emailNorm}</span>. Open it on this device to
+                continue.
               </p>
 
               {secondsLeft > 0 ? (
@@ -131,7 +176,7 @@ export default function LoginPage() {
                 </p>
               ) : (
                 <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                  Didn’t get it? Check spam/junk.
+                  Didn’t get it? Check spam/junk and wait a moment before retrying.
                 </p>
               )}
 
@@ -159,19 +204,19 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                inputMode="email"
                 className="h-11 rounded-xl border border-black/10 bg-white px-3 text-sm outline-none ring-brand-400 placeholder:text-neutral-400 focus:ring-2 dark:border-white/10 dark:bg-white/5"
               />
 
               <button
-                disabled={loading || cooldownActive || email.trim().length === 0}
+                disabled={loading || cooldownActive || emailNorm.length === 0}
                 type="submit"
                 className="mt-2 inline-flex h-11 items-center justify-center rounded-xl bg-brand-600 px-4 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-60"
               >
-                {loading
-                  ? 'Sending…'
-                  : cooldownActive
-                    ? `Try again in ${secondsLeft}s`
-                    : 'Send magic link'}
+                {loading ? 'Sending…' : cooldownActive ? `Try again in ${secondsLeft}s` : 'Send magic link'}
               </button>
 
               {err && (
