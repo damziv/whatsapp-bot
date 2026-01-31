@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSupabaseBrowser } from '@/lib/supabase-browser';
 
-const DEFAULT_COOLDOWN_MS = 90_000;
+const COOLDOWN_MS = 2 * 60_000; // 2 minutes (more realistic UX)
 
 function cooldownKey(email: string) {
   return `otpCooldownUntil:${email.trim().toLowerCase()}`;
@@ -46,13 +46,11 @@ export default function LoginPage() {
 
   const emailNorm = useMemo(() => email.trim().toLowerCase(), [email]);
 
-  // Timer tick for countdown
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 250);
     return () => clearInterval(t);
   }, []);
 
-  // Load cooldown for current email (persists across refresh on mobile)
   useEffect(() => {
     setCooldownUntil(readCooldownUntil(emailNorm));
   }, [emailNorm]);
@@ -95,42 +93,43 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch('/api/auth/request-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: emailNorm }),
+      const supabase = getSupabaseBrowser();
+
+      const redirectTo =
+        typeof window !== 'undefined'
+          ? `${window.location.origin}/auth/callback`
+          : '';
+
+      const { error } = await supabase.auth.signInWithOtp({
+        email: emailNorm,
+        options: {
+          emailRedirectTo: redirectTo,
+          // optional: create user only if you want automatic provisioning
+          // shouldCreateUser: true,
+        },
       });
 
-      const out: unknown = await res.json().catch(() => ({}));
-      const errMsg =
-        typeof out === 'object' && out !== null && 'error' in out && typeof (out as { error?: unknown }).error === 'string'
-          ? (out as { error: string }).error
-          : res.ok
-            ? ''
-            : 'Request failed';
+      if (error) throw error;
 
-      if (!res.ok) {
-        // If server returns Retry-After, use it for cooldown
-        const ra = res.headers.get('retry-after');
-        const raMs = ra && Number.isFinite(Number(ra)) ? Number(ra) * 1000 : DEFAULT_COOLDOWN_MS;
-
-        if (res.status === 429) {
-          const until = Date.now() + Math.max(30_000, raMs);
-          setCooldownUntil(until);
-          writeCooldownUntil(emailNorm, until);
-        }
-
-        throw new Error(errMsg);
-      }
-
-      const until = Date.now() + DEFAULT_COOLDOWN_MS;
+      const until = Date.now() + COOLDOWN_MS;
       setCooldownUntil(until);
       writeCooldownUntil(emailNorm, until);
 
       setSent(true);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
-      setErr(msg);
+
+      // If Supabase rate limited (can be several minutes), enforce a longer cooldown
+      if (msg.toLowerCase().includes('rate limit')) {
+        const until = Date.now() + 10 * 60_000; // 10 minutes
+        setCooldownUntil(until);
+        writeCooldownUntil(emailNorm, until);
+        setErr('Too many requests. Please wait 10 minutes and try again.');
+      } else if (msg.toLowerCase().includes('failed to fetch') || msg.toLowerCase().includes('network')) {
+        setErr('Network issue detected. Please check your connection and try again.');
+      } else {
+        setErr(msg);
+      }
     } finally {
       setLoading(false);
       submitLockRef.current = false;
@@ -175,7 +174,9 @@ export default function LoginPage() {
                   You can request a new link in {secondsLeft}s.
                 </p>
               ) : (
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">Didn’t get it? Check spam/junk.</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                  Didn’t get it? Check spam/junk.
+                </p>
               )}
 
               <button
