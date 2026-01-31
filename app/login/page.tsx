@@ -1,7 +1,7 @@
 // app/login/page.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSupabaseBrowser } from '@/lib/supabase-browser';
 
@@ -11,7 +11,19 @@ export default function LoginPage() {
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
+
+  // cooldown (prevents hammering OTP)
+  const [cooldownUntil, setCooldownUntil] = useState<number>(0);
+  const [now, setNow] = useState<number>(() => Date.now());
+
+  const submitLockRef = useRef(false);
   const router = useRouter();
+
+  // tick for countdown UI
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(t);
+  }, []);
 
   // If already signed in, redirect to portal
   useEffect(() => {
@@ -30,16 +42,24 @@ export default function LoginPage() {
     };
   }, [router]);
 
+  const cooldownActive = cooldownUntil > now;
+  const secondsLeft = cooldownActive ? Math.ceil((cooldownUntil - now) / 1000) : 0;
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    // hard guard against double submit / double-tap
+    if (submitLockRef.current) return;
+    if (loading) return;
+    if (cooldownActive) return;
+
+    submitLockRef.current = true;
     setErr(null);
     setLoading(true);
 
     try {
       const supabase = getSupabaseBrowser();
 
-      // IMPORTANT: always redirect back to the same origin that initiated login
-      // so localhost stays localhost, and Vercel stays Vercel.
       const redirectTo =
         typeof window !== 'undefined'
           ? `${window.location.origin}/auth/callback`
@@ -51,11 +71,23 @@ export default function LoginPage() {
       });
 
       if (error) throw error;
+
+      // start resend cooldown (60s)
+      setCooldownUntil(Date.now() + 60_000);
       setSent(true);
     } catch (e: unknown) {
-      setErr(e instanceof Error ? e.message : String(e));
+      const msg = e instanceof Error ? e.message : String(e);
+
+      // make rate limiting obvious to the user
+      if (msg.toLowerCase().includes('rate limit')) {
+        setErr('Too many requests. Please wait a minute and try again.');
+        setCooldownUntil(Date.now() + 60_000);
+      } else {
+        setErr(msg);
+      }
     } finally {
       setLoading(false);
+      submitLockRef.current = false;
     }
   }
 
@@ -75,7 +107,7 @@ export default function LoginPage() {
     <main className="min-h-screen bg-gradient-to-b from-brand-50 to-white px-4 py-10 dark:from-neutral-900 dark:to-neutral-950">
       <div className="mx-auto w-full max-w-md">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-centerqU  items-center justify-center rounded-2xl bg-brand-600 text-white">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-600 text-white">
             💍
           </div>
           <h1 className="text-2xl font-semibold tracking-[-0.02em]">Sign in</h1>
@@ -92,6 +124,16 @@ export default function LoginPage() {
                 We sent a sign-in link to <span className="font-medium">{email}</span>.
                 Open it on this device to continue.
               </p>
+
+              {secondsLeft > 0 ? (
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                  You can request a new link in {secondsLeft}s.
+                </p>
+              ) : (
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                  Didn’t get it? Check spam/junk.
+                </p>
+              )}
 
               <button
                 type="button"
@@ -121,11 +163,15 @@ export default function LoginPage() {
               />
 
               <button
-                disabled={loading}
+                disabled={loading || cooldownActive || email.trim().length === 0}
                 type="submit"
                 className="mt-2 inline-flex h-11 items-center justify-center rounded-xl bg-brand-600 px-4 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-60"
               >
-                {loading ? 'Sending…' : 'Send magic link'}
+                {loading
+                  ? 'Sending…'
+                  : cooldownActive
+                    ? `Try again in ${secondsLeft}s`
+                    : 'Send magic link'}
               </button>
 
               {err && (

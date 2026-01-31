@@ -132,6 +132,7 @@ export default function PortalLayout({ children }: { children: ReactNode }) {
         <nav className="space-y-1">
           <NavItem href="/portal/albums" label="Albums" />
           <NavItem href="/portal/create" label="Create album" />
+          <NavItem href="/portal/settings" label="Settings" />
         </nav>
 
         <button
@@ -164,6 +165,7 @@ export default function PortalLayout({ children }: { children: ReactNode }) {
             <nav className="space-y-1">
               <NavItem href="/portal/albums" label="Albums" />
               <NavItem href="/portal/create" label="Create album" />
+              <NavItem href="/portal/settings" label="Settings" />
             </nav>
           </div>
         </div>
