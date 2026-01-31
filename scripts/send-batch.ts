@@ -1,6 +1,8 @@
 import fs from 'fs';
 import { parse } from 'csv-parse/sync';
 import twilio from 'twilio';
+import dotenv from 'dotenv';
+dotenv.config();
 
 type GuestRow = {
     name?: string;
@@ -25,11 +27,11 @@ async function main() {
 
   for (const r of rows) {
     const phoneNumber = "385989054083"; // <-- your WABA number in intl format
-    const messageText = "ALBUM DJEVOJACKA";
+    const messageText = "ALBUM 8MVAPGA";
     const waLink = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(messageText)}`;
   
     const body = 
-      `Pozdrav! Danas je Anđelina djevojačka! 🎉🍻
+      `Pozdrav! Danas je Antonelina djevojačka! 🎉🍻
       
       Slikaj i šalji uspomene na WhatsApp:
       ${waLink}
@@ -56,5 +58,9 @@ async function main() {
 
   console.log({ sent, failed });
 }
+
+console.log('SID:', process.env.TWILIO_ACCOUNT_SID);
+console.log('TOKEN:', process.env.TWILIO_AUTH_TOKEN?.slice(0, 6));
+console.log('MSG SID:', process.env.TWILIO_MESSAGING_SID);
 
 main().catch(err => { console.error(err); process.exit(1); });
