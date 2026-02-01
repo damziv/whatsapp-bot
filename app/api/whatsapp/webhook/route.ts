@@ -40,16 +40,17 @@ type BindingWithAlbum = {
 };
 
 type WaImage = { id: string; mime_type?: string; caption?: string };
-type WaDocument = { id: string; mime_type?: string; filename?: string };
+type WaVideo = { id: string; mime_type?: string; caption?: string };
+type WaDocument = { id: string; mime_type?: string; filename?: string; caption?: string };
 type WaText = { body?: string };
 
 type WaMessage = {
   from: string;
-  type: string; // 'text' | 'image' | 'document' | others
+  type: string; // 'text' | 'image' | 'video' | 'document' | others
   text?: WaText;
   image?: WaImage;
+  video?: WaVideo;
   document?: WaDocument;
-  // other fields omitted for brevity
 };
 
 type WaValue = {
@@ -75,7 +76,7 @@ function withinWindow(now: Date, start?: string | null, end?: string | null) {
 }
 
 function cryptoRandom() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0,
       v = c === 'x' ? r : (r & 0x3) | 0x8;
     return v.toString(16);
@@ -84,6 +85,23 @@ function cryptoRandom() {
 
 function fmt(dt?: string | null) {
   return dt ? new Date(dt).toLocaleString() : 'N/A';
+}
+
+function extFromMime(mime: string) {
+  const m = (mime || '').toLowerCase();
+
+  // images
+  if (m.includes('jpeg')) return 'jpg';
+  if (m.includes('png')) return 'png';
+  if (m.includes('webp')) return 'webp';
+  if (m.includes('gif')) return 'gif';
+
+  // videos
+  if (m === 'video/mp4') return 'mp4';
+  if (m === 'video/quicktime') return 'mov';
+
+  const parts = m.split('/');
+  return parts[1] || 'bin';
 }
 
 async function getAlbumByCode(code: string): Promise<AlbumRow | null> {
@@ -134,21 +152,39 @@ async function getBindingWithAlbum(msisdn: string): Promise<BindingWithAlbum | n
   return normalizeBinding(data);
 }
 
+/**
+ * Download WhatsApp media bytes.
+ * IMPORTANT: ask for fields explicitly, otherwise `url` can be missing.
+ */
 async function downloadWhatsAppMedia(mediaId: string): Promise<Buffer> {
-  // step 1: get a temporary URL for the media
-  const meta = await fetch(`https://graph.facebook.com/v21.0/${mediaId}`, {
-    headers: { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN!}` }
-  }).then(r => r.json());
+  const metaRes = await fetch(
+    `https://graph.facebook.com/v21.0/${mediaId}?fields=url,mime_type`,
+    {
+      headers: { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN!}` },
+    }
+  );
 
-  if (!(meta && typeof meta === 'object' && 'url' in meta) || !meta.url) {
+  if (!metaRes.ok) {
+    const txt = await metaRes.text().catch(() => '');
+    throw new Error(`WhatsApp media meta failed (${metaRes.status}): ${txt}`);
+  }
+
+  const meta = (await metaRes.json()) as { url?: string; mime_type?: string };
+
+  if (!meta.url) {
     throw new Error('No media URL from WhatsApp');
   }
 
-  // step 2: download binary using the token
-  const bin = await fetch((meta as { url: string }).url, {
-    headers: { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN!}` }
-  }).then(r => r.arrayBuffer());
+  const binRes = await fetch(meta.url, {
+    headers: { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN!}` },
+  });
 
+  if (!binRes.ok) {
+    const txt = await binRes.text().catch(() => '');
+    throw new Error(`WhatsApp media download failed (${binRes.status}): ${txt}`);
+  }
+
+  const bin = await binRes.arrayBuffer();
   return Buffer.from(bin);
 }
 
@@ -157,14 +193,14 @@ async function sendWhatsApp(waPhoneId: string, toMsisdn: string, text: string) {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${process.env.WHATSAPP_TOKEN!}`,
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
       messaging_product: 'whatsapp',
       to: toMsisdn,
       type: 'text',
-      text: { body: text }
-    })
+      text: { body: text },
+    }),
   });
 }
 
@@ -184,11 +220,15 @@ export async function POST(req: NextRequest) {
       const from = msg.from;
       const type = msg.type;
 
-      // Accept "document" if it's actually an image document
+      // Accept "document" if it's actually an image/video document
       const isImageDocument = type === 'document' && !!msg.document?.mime_type?.startsWith('image/');
+      const isVideoDocument = type === 'document' && !!msg.document?.mime_type?.startsWith('video/');
+
       if (isImageDocument && msg.document) {
-        // Shim it into the image shape for reuse
-        msg.image = { id: msg.document.id, mime_type: msg.document.mime_type };
+        msg.image = { id: msg.document.id, mime_type: msg.document.mime_type, caption: msg.document.caption };
+      }
+      if (isVideoDocument && msg.document) {
+        msg.video = { id: msg.document.id, mime_type: msg.document.mime_type, caption: msg.document.caption };
       }
 
       // --- TEXT: ALBUM <code> handler ---
@@ -199,7 +239,7 @@ export async function POST(req: NextRequest) {
           await sendWhatsApp(
             waPhoneId,
             from,
-            'Pošalji "ALBUM <code>" kako bi odabrao album (npr., ALBUM K3H9WT). Nakon toga šalji slike. 📸'
+            'Pošalji "ALBUM <code>" kako bi odabrao album (npr., ALBUM K3H9WT). Nakon toga šalji slike ili kratke videe. 📸🎥'
           );
           return;
         }
@@ -216,11 +256,7 @@ export async function POST(req: NextRequest) {
           }
           const now = new Date();
           if (!withinWindow(now, album.start_at, album.end_at)) {
-            await sendWhatsApp(
-              waPhoneId,
-              from,
-              'Ovaj album još uvijek nije otvoren (izvan dozvoljenog vremena).'
-            );
+            await sendWhatsApp(waPhoneId, from, 'Ovaj album još uvijek nije otvoren (izvan dozvoljenog vremena).');
             return;
           }
           await upsertBinding(from, album.id);
@@ -230,7 +266,7 @@ export async function POST(req: NextRequest) {
             `Album postavljen, nema potrebe ponovno skenirati link ✅
 Događaj: ${album.album_slug}
 Vrijeme: ${fmt(album.start_at)} → ${fmt(album.end_at)}
-Sada šaljite slike.`
+Sada šaljite slike ili kratke videe.`
           );
         } catch (err: unknown) {
           const message = err instanceof Error ? err.message : String(err);
@@ -240,12 +276,15 @@ Sada šaljite slike.`
         return;
       }
 
-      // --- Only images accepted for MVP ---
-      if (type !== 'image' && !isImageDocument) {
+      // --- Only images/videos accepted ---
+      const isImage = type === 'image' || isImageDocument;
+      const isVideo = type === 'video' || isVideoDocument;
+
+      if (!isImage && !isVideo) {
         await sendWhatsApp(
           waPhoneId,
           from,
-          'Samo su slike dozvoljene u ovom albumu. 📸\nUpute: pošalji “ALBUM <code>” kako bi odabrao album.'
+          'Dozvoljene su samo slike i kratki videi. 📸🎥\nUpute: pošalji “ALBUM <code>” kako bi odabrao album.'
         );
         return;
       }
@@ -254,16 +293,16 @@ Sada šaljite slike.`
         // Resolve binding
         const binding = await getBindingWithAlbum(from);
         const album = binding?.albums;
+
         if (!album) {
-          // also try from caption, for first-time users sending a photo with caption "ALBUM CODE"
-          const caption = msg.image?.caption?.trim();
+          // try from caption for first-time users
+          const caption = (isImage ? msg.image?.caption : msg.video?.caption)?.trim();
           if (caption) {
             const m2 = /^ALBUM\s+([A-Za-z0-9_-]{3,40})$/i.exec(caption);
             if (m2) {
               const maybe = await getAlbumByCode(m2[1].toUpperCase());
               if (maybe && maybe.is_active && withinWindow(new Date(), maybe.start_at, maybe.end_at)) {
                 await upsertBinding(from, maybe.id);
-                // proceed as if bound
               }
             }
           }
@@ -271,8 +310,13 @@ Sada šaljite slike.`
 
         const binding2 = album ? { albums: album } : await getBindingWithAlbum(from);
         const finalAlbum = binding2?.albums;
+
         if (!finalAlbum) {
-          await sendWhatsApp(waPhoneId, from, 'Molimo prvo odaberite album: pošaljite "ALBUM <code>" (skeniraj QR kod).');
+          await sendWhatsApp(
+            waPhoneId,
+            from,
+            'Molimo prvo odaberite album: pošaljite "ALBUM <code>" (skeniraj QR kod).'
+          );
           return;
         }
 
@@ -283,9 +327,13 @@ Sada šaljite slike.`
           return;
         }
 
+        // Media id + mime
+        const waMediaId = (isImage ? msg.image?.id : msg.video?.id) as string;
+        const mime =
+          (isImage ? msg.image?.mime_type : msg.video?.mime_type) ||
+          (isImage ? 'image/jpeg' : 'video/mp4');
+
         // Download & de-dup
-        const waMediaId = msg.image?.id as string;
-        const mime = (msg.image?.mime_type as string) || 'image/jpeg';
         const buf = await downloadWhatsAppMedia(waMediaId);
         const hash = sha256Hex(buf);
 
@@ -294,18 +342,19 @@ Sada šaljite slike.`
           .select('id')
           .eq('content_hash', hash)
           .limit(1);
+
         if (!dup.error && dup.data && dup.data.length > 0) {
           await sendWhatsApp(waPhoneId, from, 'Izgleda kao duplikat. Preskočeno. 😉');
           return;
         }
 
-        // Build path with slugs
-        const ext = mime.includes('jpeg') ? 'jpg' : (mime.split('/')[1] || 'bin');
+        // Build storage key
+        const ext = extFromMime(mime);
         const key = `event/${finalAlbum.event_slug}/${finalAlbum.album_slug}/${cryptoRandom()}.${ext}`;
 
         const up = await supabaseAdmin.storage.from('media').upload(key, buf, {
           contentType: mime,
-          upsert: false
+          upsert: false,
         });
         if (up.error) throw up.error;
 
@@ -313,13 +362,13 @@ Sada šaljite slike.`
           storage_key: key,
           uploader_msisdn: from,
           mime,
-          bytes: buf.byteLength ?? buf.length ?? null,
+          bytes: buf.byteLength ?? (buf as any).length ?? null,
           content_hash: hash,
           event_slug: finalAlbum.event_slug,
-          album_slug: finalAlbum.album_slug
+          album_slug: finalAlbum.album_slug,
         });
 
-        await sendWhatsApp(waPhoneId, from, 'Postavljeno ✔️ Hvala!');
+        await sendWhatsApp(waPhoneId, from, isVideo ? 'Video postavljen ✔️ Hvala!' : 'Postavljeno ✔️ Hvala!');
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
         console.error('Upload error:', message);

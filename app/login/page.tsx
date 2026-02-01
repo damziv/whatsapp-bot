@@ -121,7 +121,7 @@ export default function LoginPage() {
 
       // If Supabase rate limited (can be several minutes), enforce a longer cooldown
       if (msg.toLowerCase().includes('rate limit')) {
-        const until = Date.now() + 10 * 60_000; // 10 minutes
+        const until = Date.now() + 1 * 60_000; // 10 minutes
         setCooldownUntil(until);
         writeCooldownUntil(emailNorm, until);
         setErr('Too many requests. Please wait 10 minutes and try again.');

@@ -10,6 +10,10 @@ export const dynamic = 'force-dynamic';
 type Item = { id: string; url: string; created_at: string; mime?: string | null };
 type AlbumMeta = { label?: string; start_at?: string | null; end_at?: string | null };
 
+function isVideoMime(m?: string | null) {
+  return !!m && m.toLowerCase().startsWith('video/');
+}
+
 export default function GalleryPage() {
   return (
     <Suspense fallback={<GallerySkeleton />}>
@@ -56,13 +60,11 @@ function GalleryInner() {
     reload();
   }, [reload]);
 
-  // open lightbox
   const openAt = (i: number) => {
     setIdx(i);
     setIsOpen(true);
   };
 
-  // keyboard navigation
   useEffect(() => {
     if (!isOpen) return;
 
@@ -113,7 +115,7 @@ function GalleryInner() {
   };
 
   const deleteItem = async (media_id: string) => {
-    if (!confirm('Delete this photo?')) return;
+    if (!confirm('Delete this item?')) return;
 
     const res = await fetch('/api/owner/delete', {
       method: 'POST',
@@ -169,31 +171,50 @@ function GalleryInner() {
 
         {!loading && items.length === 0 && (
           <div className="rounded-2xl border border-black/5 bg-white p-6 text-sm shadow-card dark:border-white/10 dark:bg-white/5">
-            No photos yet{code ? ' for this album.' : '.'}
+            No uploads yet{code ? ' for this album.' : '.'}
           </div>
         )}
 
         {!loading && items.length > 0 && (
           <div className="[column-fill:_balance] columns-2 gap-2 sm:columns-3 sm:gap-3 md:columns-4">
-            {items.map((it, i) => (
-              <div key={it.id} className="mb-2 break-inside-avoid">
-                <div className="relative overflow-hidden rounded-2xl ring-1 ring-black/5 dark:ring-white/10">
-                  <button type="button" onClick={() => openAt(i)} className="block w-full" aria-label="Open image">
-                    <Image src={it.url} alt="" width={1200} height={800} unoptimized className="h-auto w-full" />
-                  </button>
+            {items.map((it, i) => {
+              const video = isVideoMime(it.mime);
 
-                  {isOwner && (
-                    <button
-                      type="button"
-                      onClick={() => deleteItem(it.id)}
-                      className="absolute right-2 top-2 inline-flex h-9 items-center justify-center rounded-xl bg-white/90 px-3 text-xs font-semibold text-neutral-900 shadow-card transition hover:bg-white"
-                    >
-                      Delete
+              return (
+                <div key={it.id} className="mb-2 break-inside-avoid">
+                  <div className="relative overflow-hidden rounded-2xl ring-1 ring-black/5 dark:ring-white/10">
+                    <button type="button" onClick={() => openAt(i)} className="block w-full" aria-label="Open">
+                      {video ? (
+                        <div className="relative">
+                          <video
+                            src={it.url}
+                            playsInline
+                            muted
+                            preload="metadata"
+                            className="h-auto w-full"
+                          />
+                          <div className="pointer-events-none absolute bottom-2 right-2 rounded-lg bg-black/60 px-2 py-1 text-xs text-white">
+                            ▶ Video
+                          </div>
+                        </div>
+                      ) : (
+                        <Image src={it.url} alt="" width={1200} height={800} unoptimized className="h-auto w-full" />
+                      )}
                     </button>
-                  )}
+
+                    {isOwner && (
+                      <button
+                        type="button"
+                        onClick={() => deleteItem(it.id)}
+                        className="absolute right-2 top-2 inline-flex h-9 items-center justify-center rounded-xl bg-white/90 px-3 text-xs font-semibold text-neutral-900 shadow-card transition hover:bg-white"
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -228,7 +249,7 @@ function GalleryInner() {
             </div>
 
             <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">
-              Enter the PIN from your photographer to delete or download photos.
+              Enter the PIN from your photographer to delete or download uploads.
             </p>
 
             <input
@@ -268,7 +289,7 @@ function GallerySkeleton() {
   );
 }
 
-/* === Lightbox (typed + Image) ======================================= */
+/* === Lightbox ======================================================= */
 function Lightbox({
   items,
   index,
@@ -276,7 +297,7 @@ function Lightbox({
   onPrev,
   onNext,
 }: {
-  items: { id: string; url: string }[];
+  items: { id: string; url: string; mime?: string | null }[];
   index: number;
   onClose: () => void;
   onPrev: () => void;
@@ -318,6 +339,7 @@ function Lightbox({
   };
 
   const current = items[index];
+  const video = isVideoMime(current.mime);
 
   return (
     <div
@@ -356,14 +378,24 @@ function Lightbox({
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        <Image
-          src={current.url}
-          alt=""
-          width={2000}
-          height={2000}
-          unoptimized
-          className="h-full max-h-[90vh] w-auto max-w-[95vw] rounded-2xl object-contain ring-1 ring-white/10"
-        />
+        {video ? (
+          <video
+            src={current.url}
+            controls
+            playsInline
+            preload="metadata"
+            className="h-full max-h-[90vh] w-auto max-w-[95vw] rounded-2xl object-contain ring-1 ring-white/10"
+          />
+        ) : (
+          <Image
+            src={current.url}
+            alt=""
+            width={2000}
+            height={2000}
+            unoptimized
+            className="h-full max-h-[90vh] w-auto max-w-[95vw] rounded-2xl object-contain ring-1 ring-white/10"
+          />
+        )}
       </div>
 
       <div className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/50 px-3 py-1 text-xs text-white">
