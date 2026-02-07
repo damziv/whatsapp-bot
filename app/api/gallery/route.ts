@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
   if (code) {
     const { data: album, error: albErr } = await supabaseAdmin
       .from('albums')
-      .select('event_slug, album_slug')
+      .select('code, event_slug, album_slug, start_at, end_at, is_active')
       .eq('code', code)
       .maybeSingle();
 
@@ -43,6 +43,7 @@ export async function GET(req: NextRequest) {
     filter = { event_slug: album.event_slug, album_slug: album.album_slug };
   }
 
+  
   // 2) Page through ALL media rows (no hard 100 limit)
   const PAGE = 1000; // PostgREST max per page; loop to get everything
   let from = 0;
