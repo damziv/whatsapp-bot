@@ -14,11 +14,10 @@ const Beliefs = () => {
               beliefs
             </p>
             <h3 className="text-white mb-5 text-center sm:text-start">
-            Built around WhatsApp{' '}
+            Temeljeno na WhatsAppu{' '}
           </h3>
               <p className="text-lg text-white/75 pt-2 mb-16 text-center sm:text-start">
-                Guests already know how to send photos on WhatsApp. We simply turn that into
-                a private, organized event gallery.
+              Gosti već znaju slati fotografije putem WhatsAppa. Mi to pretvaramo u privatnu, organiziranu galeriju vašeg događaja.
               </p>
             <div className='text-center sm:text-start'>
               
@@ -29,16 +28,15 @@ const Beliefs = () => {
           <div className=''>
             <div className="bg-[#D6FFEB] pt-12 px-10 sm:px-24 pb-52 md:pb-70 rounded-3xl bg-[url('/images/beliefs/bg.svg')] bg-no-repeat bg-bottom">
             <p className="text-lg font-normal text-primary tracking-widest mb-5 text-center sm:text-start uppercase">
-              CREATE
+              SKENIRAJ
             </p>
 
             <h3 className="text-black mb-5 text-center sm:text-start">
-              <span className="text-primary">Create</span> a QR album in seconds.
+              <span className="text-primary">Skeniraj</span> QR kod albuma i šalji u sekundi.
             </h3>
 
             <p className="pt-2 mb-16 text-center sm:text-start text-black/75 text-lg">
-              Set up a private gallery for your event and generate a unique QR code that
-              guests can scan instantly.
+            Kreirajte privatnu galeriju za događaj i jedinstveni QR kod koji gosti mogu skenirati u trenutku.
             </p>
 
               <div className='text-center sm:text-start'>

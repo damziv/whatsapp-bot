@@ -195,7 +195,7 @@ function ManageInner() {
             <h1 className="text-2xl font-semibold tracking-[-0.02em]">{title}</h1>
             {meta?.start_at && meta?.end_at && (
               <div className="mt-1 text-xs text-neutral-600 dark:text-neutral-300">
-                Upload window: {new Date(meta.start_at).toLocaleString()} → {new Date(meta.end_at).toLocaleString()}
+                Dopušteno vrijeme postavljanja: {new Date(meta.start_at).toLocaleString()} → {new Date(meta.end_at).toLocaleString()}
               </div>
             )}
           </div>
@@ -224,9 +224,9 @@ function ManageInner() {
 
         {!token && (
           <div className="mb-6 rounded-2xl border border-black/5 bg-white p-6 shadow-card dark:border-white/10 dark:bg-white/5">
-            <h2 className="text-lg font-semibold">Enter owner PIN</h2>
+            <h2 className="text-lg font-semibold">Unesite PIN</h2>
             <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">
-              This PIN was provided by your photographer to manage the gallery (delete photos + download all).
+            Ovaj PIN vam je dodijeljen za upravljanje galerijom. (delete photos + download all).
             </p>
 
             <form onSubmit={submitPin} className="mt-4 flex flex-wrap gap-3">
@@ -256,13 +256,13 @@ function ManageInner() {
 
         {loading && (
           <div className="rounded-2xl border border-black/5 bg-white p-6 text-sm shadow-card dark:border-white/10 dark:bg-white/5">
-            Loading…
+            Učitavanje…
           </div>
         )}
 
         {!loading && items.length === 0 && (
           <div className="rounded-2xl border border-black/5 bg-white p-6 text-sm shadow-card dark:border-white/10 dark:bg-white/5">
-            No photos yet.
+            Još nema fotografija.
           </div>
         )}
 
@@ -304,7 +304,7 @@ function Skeleton() {
     <main className="min-h-screen bg-gradient-to-b from-brand-50 to-white px-4 py-10 dark:from-neutral-900 dark:to-neutral-950">
       <div className="mx-auto w-full max-w-5xl">
         <div className="rounded-2xl border border-black/5 bg-white p-6 text-sm shadow-card dark:border-white/10 dark:bg-white/5">
-          Loading…
+          Učitavanje…
         </div>
       </div>
     </main>

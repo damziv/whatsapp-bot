@@ -6,32 +6,40 @@ import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { getSupabaseBrowser } from '@/lib/supabase-browser';
 
-type PortalAlbum = {
-  profile_id: string;
-  bride_name: string | null;
-  groom_name: string | null;
-  event_date: string | null;
+type AdminAlbum = {
+  id: string;
+  code: string;
+  event_slug: string;
+  album_slug: string;
   start_at: string | null;
   end_at: string | null;
   is_active: boolean;
-  code: string;
   created_at: string;
+  bride_name: string | null;
+  groom_name: string | null;
+  owner_email: string | null;
+  event_type: string | null;
+  event_date: string | null;
+  media_count: number;
 };
 
-type PortalPayload = {
-  photographer: {
-    quota_yearly: number;
-    period_start: string;
-    period_end: string;
-  };
-  usage: { used: number; quota: number };
-  albums: PortalAlbum[];
-};
+type Payload = { albums: AdminAlbum[] };
 
-export default function PortalAlbumsPage() {
+async function safeJson(res: Response) {
+  const text = await res.text();
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { error: text };
+  }
+}
+
+export default function AdminAlbumsPage() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
-  const [payload, setPayload] = useState<PortalPayload | null>(null);
+  const [payload, setPayload] = useState<Payload | null>(null);
+  const [q, setQ] = useState('');
 
   // Reset-pin modal
   const [pinModal, setPinModal] = useState<{ code: string; pin: string } | null>(null);
@@ -40,10 +48,7 @@ export default function PortalAlbumsPage() {
   // Delete album state
   const [deletingCode, setDeletingCode] = useState<string | null>(null);
 
-  const usageText = useMemo(() => {
-    if (!payload) return '';
-    return `${payload.usage.used}/${payload.usage.quota}`;
-  }, [payload]);
+  const albums = payload?.albums ?? [];
 
   const copy = async (text: string) => {
     try {
@@ -73,12 +78,12 @@ export default function PortalAlbumsPage() {
     if (!token) return;
 
     try {
-      const res = await fetch('/api/portal/albums', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = (await res.json()) as PortalPayload | { error: string };
-      if (!res.ok) throw new Error(('error' in data && data.error) || 'Failed to load albums');
-      setPayload(data as PortalPayload);
+      const url = q.trim() ? `/api/admin/albums?q=${encodeURIComponent(q.trim())}` : `/api/admin/albums`;
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      const data = (await safeJson(res)) as Payload | { error?: string } | null;
+
+      if (!res.ok) throw new Error((data as any)?.error || `Failed to load albums (${res.status})`);
+      setPayload((data as Payload) ?? { albums: [] });
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : String(e));
     } finally {
@@ -99,7 +104,7 @@ export default function PortalAlbumsPage() {
   }, []);
 
   const resetPin = async (code: string) => {
-    if (!confirm('Resetirati PIN vlasnika? Stari PIN više neće vrijediti.')) return;
+    if (!confirm('Reset owner PIN? Old PIN will stop working.')) return;
 
     setErr(null);
     setResettingCode(code);
@@ -108,7 +113,7 @@ export default function PortalAlbumsPage() {
     if (!token) return;
 
     try {
-      const res = await fetch('/api/portal/albums/reset-pin', {
+      const res = await fetch('/api/admin/albums/reset-pin', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -117,8 +122,10 @@ export default function PortalAlbumsPage() {
         body: JSON.stringify({ code }),
       });
 
-      const out = await res.json();
-      if (!res.ok) throw new Error(out?.error || 'Failed to reset PIN');
+      const out = (await safeJson(res)) as any;
+
+      if (!res.ok) throw new Error(out?.error || `Failed to reset PIN (${res.status})`);
+      if (!out?.owner_pin) throw new Error('Server did not return owner_pin');
 
       setPinModal({ code, pin: out.owner_pin });
     } catch (e: unknown) {
@@ -129,12 +136,7 @@ export default function PortalAlbumsPage() {
   };
 
   const deleteAlbum = async (code: string) => {
-    if (
-      !confirm(
-        'Obrisati ovaj album? Fotografije će također biti obrisane.\n\nOvo je dopušteno samo unutar 24 sata od kreiranja albuma.'
-      )
-    )
-      return;
+    if (!confirm('Delete this album? Photos will also be deleted.\n\n(Admin can delete anytime.)')) return;
 
     setErr(null);
     setDeletingCode(code);
@@ -143,7 +145,7 @@ export default function PortalAlbumsPage() {
     if (!token) return;
 
     try {
-      const res = await fetch('/api/portal/albums', {
+      const res = await fetch('/api/admin/albums', {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -152,8 +154,9 @@ export default function PortalAlbumsPage() {
         body: JSON.stringify({ code }),
       });
 
-      const out = await res.json();
-      if (!res.ok) throw new Error(out?.error || 'Brisanje albuma nije uspjelo');
+      const out = (await safeJson(res)) as any;
+
+      if (!res.ok) throw new Error(out?.error || `Delete failed (${res.status})`);
 
       await load();
     } catch (e: unknown) {
@@ -163,7 +166,7 @@ export default function PortalAlbumsPage() {
     }
   };
 
-  const statusLabel = (a: PortalAlbum) => {
+  const statusLabel = (a: AdminAlbum) => {
     const now = Date.now();
     const start = a.start_at ? new Date(a.start_at).getTime() : null;
     const end = a.end_at ? new Date(a.end_at).getTime() : null;
@@ -176,6 +179,8 @@ export default function PortalAlbumsPage() {
 
   const statusPillClass = () =>
     'rounded-full border border-black/10 px-2.5 py-0.5 text-xs text-neutral-700 dark:border-white/10 dark:text-neutral-300';
+
+  const totalText = useMemo(() => `${albums.length}`, [albums.length]);
 
   if (loading) {
     return (
@@ -205,22 +210,16 @@ export default function PortalAlbumsPage() {
     );
   }
 
-  const albums = payload?.albums ?? [];
-
   return (
     <>
-      <div className="mx-auto w-full max-w-5xl">
+      <div className="mx-auto w-full max-w-5xl space-y-4">
         {/* Header */}
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+        <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="space-y-1">
-            <h1 className="text-2xl font-semibold tracking-[-0.02em]">Albums</h1>
-            {payload && (
-              <p className="text-sm text-neutral-600 dark:text-neutral-300">
-                Iskorišteno: <span className="font-semibold">{usageText}</span> · Period:{' '}
-                {new Date(payload.photographer.period_start).toLocaleDateString()} →{' '}
-                {new Date(payload.photographer.period_end).toLocaleDateString()}
-              </p>
-            )}
+            <h1 className="text-2xl font-semibold tracking-[-0.02em]">All Albums</h1>
+            <p className="text-sm text-neutral-600 dark:text-neutral-300">
+              Showing: <span className="font-semibold">{totalText}</span>
+            </p>
           </div>
 
           <button
@@ -231,10 +230,28 @@ export default function PortalAlbumsPage() {
           </button>
         </div>
 
+        {/* Search */}
+        <div className="rounded-2xl border border-black/5 bg-white p-4 shadow-card dark:border-white/10 dark:bg-white/5">
+          <div className="flex flex-col gap-2 md:flex-row md:items-center">
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search by code…"
+              className="h-10 w-full rounded-xl border border-black/10 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-brand-200 dark:border-white/10 dark:bg-white/5"
+            />
+            <button
+              onClick={load}
+              className="inline-flex h-10 items-center justify-center rounded-xl bg-brand-600 px-4 text-sm font-semibold text-white transition hover:bg-brand-700"
+            >
+              Search
+            </button>
+          </div>
+        </div>
+
         {/* Empty */}
         {albums.length === 0 && (
           <div className="rounded-2xl border border-black/5 bg-white p-6 text-sm shadow-card dark:border-white/10 dark:bg-white/5">
-            Nema albuma. Idite na <span className="font-semibold">Kreiraj album</span> u izborniku.
+            No albums found.
           </div>
         )}
 
@@ -247,12 +264,10 @@ export default function PortalAlbumsPage() {
             const qrImg = `/api/qr?data=${encodeURIComponent(window.location.origin + shareLink)}`;
 
             const status = statusLabel(a);
-            const createdAtMs = new Date(a.created_at).getTime();
-            const canDelete = Date.now() - createdAtMs < 24 * 60 * 60 * 1000;
 
             return (
               <div
-                key={a.code}
+                key={a.id}
                 className="flex items-center gap-4 rounded-2xl border border-black/5 bg-white p-4 shadow-card dark:border-white/10 dark:bg-white/5"
               >
                 {/* QR */}
@@ -275,18 +290,26 @@ export default function PortalAlbumsPage() {
                     </div>
                     <span className={statusPillClass()}>{status}</span>
                     <span className="text-xs text-neutral-500">
-                      Kod: <span className="font-mono">{a.code}</span>
+                      Code: <span className="font-mono">{a.code}</span>
+                    </span>
+                    <span className="text-xs text-neutral-500">
+                      Media: <span className="font-semibold">{a.media_count}</span>
                     </span>
                   </div>
 
                   <div className="mt-1 text-xs text-neutral-600 dark:text-neutral-300">
-                    Vrijeme:{' '}
-                    {a.start_at ? new Date(a.start_at).toLocaleString() : 'N/A'} →{' '}
+                    Time: {a.start_at ? new Date(a.start_at).toLocaleString() : 'N/A'} →{' '}
                     {a.end_at ? new Date(a.end_at).toLocaleString() : 'N/A'}
                     {a.event_date ? (
                       <>
                         {' '}
-                        · Datum: <span className="font-medium">{new Date(a.event_date).toLocaleDateString()}</span>
+                        · Date: <span className="font-medium">{new Date(a.event_date).toLocaleDateString()}</span>
+                      </>
+                    ) : null}
+                    {a.owner_email ? (
+                      <>
+                        {' '}
+                        · Owner email: <span className="font-medium">{a.owner_email}</span>
                       </>
                     ) : null}
                   </div>
@@ -294,7 +317,7 @@ export default function PortalAlbumsPage() {
                   <div className="mt-3 grid gap-2 text-sm">
                     {/* Guest QR */}
                     <div className="truncate">
-                      <span className="text-xs text-neutral-500">QR kod za goste: </span>
+                      <span className="text-xs text-neutral-500">Guest QR: </span>
                       <a
                         href={shareLink}
                         target="_blank"
@@ -313,7 +336,7 @@ export default function PortalAlbumsPage() {
 
                     {/* Public gallery */}
                     <div className="truncate">
-                      <span className="text-xs text-neutral-500">Javna galerija: </span>
+                      <span className="text-xs text-neutral-500">Public gallery: </span>
                       <a
                         href={galleryLink}
                         target="_blank"
@@ -332,7 +355,7 @@ export default function PortalAlbumsPage() {
 
                     {/* Owner manage */}
                     <div className="truncate">
-                      <span className="text-xs text-neutral-500">Upravljanje: </span>
+                      <span className="text-xs text-neutral-500">Owner manage: </span>
                       <a
                         href={manageLink}
                         target="_blank"
@@ -356,21 +379,16 @@ export default function PortalAlbumsPage() {
                         disabled={resettingCode === a.code}
                         className="inline-flex h-9 items-center justify-center rounded-lg border border-black/10 bg-white px-3 text-xs font-semibold transition hover:bg-neutral-50 disabled:opacity-60 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
                       >
-                        {resettingCode === a.code ? 'Resetiranje…' : 'Resetiraj PIN vlasnika'}
+                        {resettingCode === a.code ? 'Resetting…' : 'Reset owner PIN'}
                       </button>
 
-                      {canDelete ? (
-                        <button
-                          onClick={() => deleteAlbum(a.code)}
-                          disabled={deletingCode === a.code}
-                          className="inline-flex h-9 items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-semibold text-red-700 transition hover:bg-red-100 disabled:opacity-60 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200 dark:hover:bg-red-950/50"
-                          title="Delete is allowed within 24 hours of creation"
-                        >
-                          {deletingCode === a.code ? 'Brisanje…' : 'Izbriši (24h)'}
-                        </button>
-                      ) : (
-                        <span className="text-xs text-neutral-500">Brisanje onemogućeno (prošlo je 24 h)</span>
-                      )}
+                      <button
+                        onClick={() => deleteAlbum(a.code)}
+                        disabled={deletingCode === a.code}
+                        className="inline-flex h-9 items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-semibold text-red-700 transition hover:bg-red-100 disabled:opacity-60 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200 dark:hover:bg-red-950/50"
+                      >
+                        {deletingCode === a.code ? 'Deleting…' : 'Delete'}
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -386,7 +404,7 @@ export default function PortalAlbumsPage() {
           <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-card dark:bg-neutral-900">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-lg font-semibold">Novi PIN vlasnika</h3>
+                <h3 className="text-lg font-semibold">New owner PIN</h3>
                 <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">
                   Album: <span className="font-mono">{pinModal.code}</span>
                 </p>
@@ -402,18 +420,18 @@ export default function PortalAlbumsPage() {
             </div>
 
             <div className="mt-4 rounded-2xl border border-black/10 bg-black/5 p-4 dark:border-white/10 dark:bg-white/10">
-              <div className="text-xs text-neutral-500">PIN Vlasnika</div>
+              <div className="text-xs text-neutral-500">Owner PIN</div>
               <div className="mt-1 font-mono text-2xl font-semibold tracking-widest">{pinModal.pin}</div>
 
               <button
                 onClick={() => copy(pinModal.pin)}
                 className="mt-3 inline-flex h-10 items-center justify-center rounded-xl bg-brand-600 px-4 text-sm font-semibold text-white transition hover:bg-brand-700"
               >
-                Kopiraj PIN
+                Copy PIN
               </button>
             </div>
 
-            <p className="mt-3 text-xs text-neutral-500">Stari PIN više ne vrijedi</p>
+            <p className="mt-3 text-xs text-neutral-500">Old PIN is no longer valid.</p>
           </div>
         </div>
       )}

@@ -7,14 +7,13 @@ const Join = () => {
       <div className="container mx-auto max-w-7xl px-4">
         <div className="text-center">
           <p className="text-primary text-lg font-normal tracking-widest uppercase">
-            Contact us
+            Kontaktirajte nas
           </p>
 
-          <h2 className="my-6">Get in touch with QRevent</h2>
+          <h2 className="my-6">Obratite se QReventu</h2>
 
           <p className="text-black/50 text-base font-normal max-w-3xl mx-auto">
-            Have questions about using QRevent for your wedding or event?
-            We’re happy to help.
+          Imate pitanja o korištenju QReventa za vjenčanje ili događaj? Rado ćemo pomoći.
           </p>
         </div>
 
@@ -34,7 +33,7 @@ const Join = () => {
 
             <div>
               <p className="text-sm uppercase tracking-widest text-black/50 mb-2">
-                Phone
+                Mob:
               </p>
               <a
                 href="tel:+385XXXXXXXXX"
@@ -45,7 +44,7 @@ const Join = () => {
             </div>
 
             <p className="text-sm text-black/40 pt-4">
-              Available via email or WhatsApp
+              Dostupni smo preko email-a i WhatsApp aplikacije
             </p>
           </div>
         </div>

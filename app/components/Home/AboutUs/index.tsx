@@ -39,9 +39,9 @@ const Aboutus = () => {
             className='absolute bottom-1 -left-20'
           />
           <p className='text-center text-primary text-lg tracking-widest uppercase mt-10'>
-            about us
+            o nama
           </p>
-          <h2 className='text-center pb-12'>Know more about us.</h2>
+          <h2 className='text-center pb-12'>Upoznajte nas bolje</h2>
           <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-16 mt-10'>
             {loading
               ? Array.from({ length: 3 }).map((_, index) => (

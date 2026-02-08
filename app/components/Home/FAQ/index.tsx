@@ -16,8 +16,8 @@ const FAQ = () => {
         <div className='relative rounded-2xl py-24 bg-faq-bg bg-no-repeat bg-cover bg-primary'>
           <p className='text-lg font-normal text-white text-center mb-6'>FAQ</p>
           <h2 className='text-white text-center max-w-3xl mx-auto'>
-            Frequently asked questions.
-          </h2>
+          Često postavljana pitanja
+                    </h2>
           <div className="w-full px-4 pt-16">
   <div className="mx-auto w-full max-w-5xl rounded-2xl p-8 bg-white mb-5">
     <Disclosure>
@@ -25,7 +25,7 @@ const FAQ = () => {
         <div>
           <DisclosureButton className="flex w-full justify-between items-center text-left text-2xl font-medium focus:outline-hidden hover:cursor-pointer">
             <span className="text-black">
-              Do guests need to install an app?
+            Trebaju li gosti instalirati aplikaciju?
             </span>
             <div
               className={`h-5 w-5 transform transition-transform duration-300 ${
@@ -38,8 +38,7 @@ const FAQ = () => {
 
           <DisclosurePanel className="text-base text-black/50 font-normal text-left pt-4 mt-6 border-t border-border">
             <div className="lg:max-w-70%">
-              No. Guests simply scan your QR code and send photos through WhatsApp.
-              It works instantly on any phone — no downloads and no account creation.
+            Ne. Gosti samo skeniraju QR kod i šalju fotografije putem WhatsAppa. Sve radi odmah, bez instalacija i bez registracije.
             </div>
           </DisclosurePanel>
         </div>
@@ -53,7 +52,7 @@ const FAQ = () => {
         <>
           <DisclosureButton className="flex w-full justify-between items-center rounded-lg text-left text-2xl font-medium focus:outline-hidden hover:cursor-pointer">
             <span className="text-black">
-              How do photos appear in the gallery?
+            Kako se fotografije pojavljuju u galeriji?
             </span>
             <div
               className={`h-5 w-5 transform transition-transform duration-300 ${
@@ -66,8 +65,7 @@ const FAQ = () => {
 
           <DisclosurePanel className="text-base text-black/50 pt-4 mt-6 text-left border-t border-border">
             <div className="lg:max-w-70%">
-              Guests upload photos by sending them via WhatsApp, and QRevent automatically
-              collects them into your private event gallery in real time.
+            Gosti šalju fotografije putem WhatsAppa, a QRevent ih automatski prikuplja u vašu privatnu galeriju događaja u stvarnom vremenu.
             </div>
           </DisclosurePanel>
         </>
@@ -81,7 +79,7 @@ const FAQ = () => {
         <>
           <DisclosureButton className="flex w-full justify-between items-center rounded-lg text-left text-2xl font-medium focus:outline-hidden hover:cursor-pointer">
             <span className="text-black">
-              Can I download and share the gallery?
+            Mogu li preuzeti i dijeliti galeriju?
             </span>
             <div
               className={`h-5 w-5 transform transition-transform duration-300 ${
@@ -94,8 +92,7 @@ const FAQ = () => {
 
           <DisclosurePanel className="text-base text-black/50 pt-4 mt-6 font-normal text-left border-t border-border">
             <div className="lg:max-w-70%">
-              Yes. You can view, download, and share your gallery anytime. It’s a single place
-              for all photos from your guests — perfect after the event.
+            Da. Galeriju možete pregledavati, preuzimati i dijeliti u bilo kojem trenutku. Sve fotografije vaših gostiju nalaze se na jednom mjestu — savršeno nakon događaja
             </div>
           </DisclosurePanel>
         </>

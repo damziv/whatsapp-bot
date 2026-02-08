@@ -28,11 +28,11 @@ const Hero = () => {
               <p className='text-primary text-lg font-bold'>QR Events</p>
             </div>
             <h1>
-            Every moment. Captured by everyone.
+            Svaki trenutak, iz svih kutova
             </h1>
             <Link href={'/login'}>
               <button className='bg-primary text-white text-xl font-semibold py-5 px-12 rounded-full hover:bg-darkmode hover:cursor-pointer mt-10'>
-                Get started
+                Pridružite se
               </button>
             </Link>
           </div>

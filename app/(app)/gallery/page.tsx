@@ -159,7 +159,7 @@ function GalleryInner() {
             </h1>
             {meta?.start_at && meta?.end_at && (
               <div className="mt-1 text-xs text-neutral-600 dark:text-neutral-300">
-                Upload window: {new Date(meta.start_at).toLocaleString()} → {new Date(meta.end_at).toLocaleString()}
+                Dopušteno vrijeme: {new Date(meta.start_at).toLocaleString()} → {new Date(meta.end_at).toLocaleString()}
               </div>
             )}
           </div>
@@ -176,13 +176,13 @@ function GalleryInner() {
 
         {loading && (
           <div className="rounded-2xl border border-black/5 bg-white p-6 text-sm shadow-card dark:border-white/10 dark:bg-white/5">
-            Loading…
+            Učitavanje…
           </div>
         )}
 
         {!loading && items.length === 0 && (
           <div className="rounded-2xl border border-black/5 bg-white p-6 text-sm shadow-card dark:border-white/10 dark:bg-white/5">
-            No uploads yet{code ? ' for this album.' : '.'}
+            Još nema učitanih fotografija {code ? ' for this album.' : '.'}
           </div>
         )}
 
@@ -219,7 +219,7 @@ function GalleryInner() {
                         onClick={() => deleteItem(it.id)}
                         className="absolute right-2 top-2 inline-flex h-9 items-center justify-center rounded-xl bg-white/90 px-3 text-xs font-semibold text-neutral-900 shadow-card transition hover:bg-white"
                       >
-                        Delete
+                        Izbriši
                       </button>
                     )}
                   </div>
@@ -246,7 +246,7 @@ function GalleryInner() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-card dark:bg-neutral-900">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Owner access</h2>
+              <h2 className="text-lg font-semibold">Pritup Vlasniku</h2>
               <button
                 onClick={() => {
                   setPinOpen(false);
@@ -260,7 +260,7 @@ function GalleryInner() {
             </div>
 
             <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">
-              Enter the PIN from your photographer to delete or download uploads.
+            Unesite PIN koji ste dobili od fotografa za brisanje ili preuzimanje fotografija.
             </p>
 
             <input
@@ -291,9 +291,9 @@ function GallerySkeleton() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-brand-50 to-white px-4 py-10 dark:from-neutral-900 dark:to-neutral-950">
       <div className="mx-auto w-full max-w-5xl">
-        <h1 className="mb-3 text-2xl font-semibold tracking-[-0.02em]">Wedding Gallery</h1>
+        <h1 className="mb-3 text-2xl font-semibold tracking-[-0.02em]">Galerija</h1>
         <div className="rounded-2xl border border-black/5 bg-white p-6 text-sm shadow-card dark:border-white/10 dark:bg-white/5">
-          Loading…
+          Učitavanje…
         </div>
       </div>
     </main>

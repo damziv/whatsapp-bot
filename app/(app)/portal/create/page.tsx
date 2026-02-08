@@ -40,9 +40,9 @@ export default function PortalCreatePage() {
   const copy = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      alert('Copied!');
+      alert('Kopirano!');
     } catch {
-      alert('Copy failed');
+      alert('Greška Kopiranja');
     }
   };
 
@@ -102,9 +102,9 @@ export default function PortalCreatePage() {
     <>
       <div className="mx-auto w-full max-w-4xl">
         <div className="mb-6">
-          <h1 className="text-2xl font-semibold tracking-[-0.02em]">Create album</h1>
+          <h1 className="text-2xl font-semibold tracking-[-0.02em]">Napravi Album</h1>
           <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">
-            One client = one QR code. Guests upload via WhatsApp.
+          Jedan klijent = jedan QR kod. Gosti šalju fotografije putem WhatsAppa.
           </p>
         </div>
 
@@ -120,7 +120,7 @@ export default function PortalCreatePage() {
           <form onSubmit={onCreate} className="grid gap-4">
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="grid gap-1.5">
-                <label className="text-sm font-medium">Bride name</label>
+                <label className="text-sm font-medium">Ime mladenke</label>
                 <input
                   value={bride}
                   onChange={(e) => setBride(e.target.value)}
@@ -131,7 +131,7 @@ export default function PortalCreatePage() {
               </div>
 
               <div className="grid gap-1.5">
-                <label className="text-sm font-medium">Groom name</label>
+                <label className="text-sm font-medium">Ime mladoženje</label>
                 <input
                   value={groom}
                   onChange={(e) => setGroom(e.target.value)}
@@ -143,7 +143,7 @@ export default function PortalCreatePage() {
             </div>
 
             <div className="grid gap-1.5">
-              <label className="text-sm font-medium">Event date (optional)</label>
+              <label className="text-sm font-medium">Datum događaja</label>
               <input
                 type="date"
                 value={date}
@@ -151,7 +151,7 @@ export default function PortalCreatePage() {
                 className="h-11 w-full rounded-xl border border-black/10 bg-white px-3 text-sm outline-none ring-brand-400 focus:ring-2 dark:border-white/10 dark:bg-white/5"
               />
               <p className="text-xs text-neutral-500">
-                If you set a date, the upload window will be centered around it (same logic as now).
+              Ako postavite datum, razdoblje za učitavanje bit će centrirano oko njega
               </p>
             </div>
 
@@ -161,25 +161,25 @@ export default function PortalCreatePage() {
                 type="submit"
                 className="inline-flex h-11 items-center justify-center rounded-xl bg-brand-600 px-5 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-60"
               >
-                {creating ? 'Creating…' : 'Create album & get QR'}
+                {creating ? 'kreiram…' : 'Kreiraj album i preuzmi QR kod'}
               </button>
 
               <a
                 href="/portal/albums"
                 className="inline-flex h-11 items-center justify-center rounded-xl border border-black/10 bg-white px-5 text-sm font-semibold text-neutral-900 transition hover:bg-neutral-50 dark:border-white/10 dark:bg-white/5 dark:text-neutral-100 dark:hover:bg-white/10"
               >
-                View all albums
+                Svi Albumi
               </a>
             </div>
           </form>
         </div>
 
         <div className="mt-6 rounded-2xl border border-black/5 bg-white p-5 text-sm shadow-card dark:border-white/10 dark:bg-white/5">
-          <div className="font-semibold">What happens next?</div>
+          <div className="font-semibold">Što slijedi?</div>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-neutral-700 dark:text-neutral-300">
-            <li>You give the QR to guests → they open WhatsApp with the album code prefilled.</li>
-            <li>Guests send photos → they appear in the public gallery link.</li>
-            <li>Couple (owner) uses the manage link + PIN to delete or download photos.</li>
+            <li>Podijelite QR kod s gostima → WhatsApp se otvara s već unesenim kodom albuma.</li>
+            <li>Gosti pošalju fotografije → one se odmah prikazuju u javnoj galeriji.</li>
+            <li>Par (vlasnici) pomoću poveznice za upravljanje i PIN-a mogu brisati ili preuzimati fotografije.</li>
           </ul>
         </div>
       </div>
@@ -190,9 +190,9 @@ export default function PortalCreatePage() {
           <div className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-card dark:bg-neutral-900">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-lg font-semibold">Album created</h3>
+                <h3 className="text-lg font-semibold">Album kreiran</h3>
                 <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">
-                  Share the QR with guests. Give the PIN to the couple (owner) to manage the gallery.
+                Podijelite QR kod s gostima. PIN dajte paru (vlasnicima) za upravljanje galerijom.
                 </p>
               </div>
 
@@ -219,29 +219,29 @@ export default function PortalCreatePage() {
 
               <div className="min-w-0 flex-1 space-y-3">
                 <div className="text-sm">
-                  <div className="text-xs text-neutral-500">Guest QR target</div>
+                  <div className="text-xs text-neutral-500">QR kod za goste</div>
                   <div className="truncate font-medium">{created.share_link}</div>
                   <button
                     onClick={() => copy(created.share_link)}
                     className="mt-1 inline-flex h-9 items-center justify-center rounded-lg border border-black/10 bg-white px-3 text-xs font-semibold transition hover:bg-neutral-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
                   >
-                    Copy
+                    Kopiraj
                   </button>
                 </div>
 
                 <div className="text-sm">
-                  <div className="text-xs text-neutral-500">Public gallery</div>
+                  <div className="text-xs text-neutral-500">Javna galerija</div>
                   <div className="truncate font-medium">{created.gallery_link}</div>
                   <button
                     onClick={() => copy(created.gallery_link)}
                     className="mt-1 inline-flex h-9 items-center justify-center rounded-lg border border-black/10 bg-white px-3 text-xs font-semibold transition hover:bg-neutral-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
                   >
-                    Copy
+                    Kopiraj
                   </button>
                 </div>
 
                 <div className="text-sm">
-                  <div className="text-xs text-neutral-500">Owner manage</div>
+                  <div className="text-xs text-neutral-500">Upravljanje galerijom</div>
                   <div className="truncate font-medium">{`${window.location.origin}/gallery/manage?code=${encodeURIComponent(
                     created.code
                   )}`}</div>
@@ -253,23 +253,23 @@ export default function PortalCreatePage() {
                     }
                     className="mt-1 inline-flex h-9 items-center justify-center rounded-lg border border-black/10 bg-white px-3 text-xs font-semibold transition hover:bg-neutral-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
                   >
-                    Copy
+                    Kopiraj
                   </button>
                 </div>
 
                 <div className="text-sm">
-                  <div className="text-xs text-neutral-500">Album code</div>
+                  <div className="text-xs text-neutral-500">Kod albuma</div>
                   <div className="font-mono text-sm">{created.code}</div>
                   <button
                     onClick={() => copy(created.code)}
                     className="mt-1 inline-flex h-9 items-center justify-center rounded-lg border border-black/10 bg-white px-3 text-xs font-semibold transition hover:bg-neutral-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
                   >
-                    Copy
+                    Kopiraj
                   </button>
                 </div>
 
                 <div className="text-sm">
-                  <div className="text-xs text-neutral-500">Owner PIN</div>
+                  <div className="text-xs text-neutral-500">PIN Vlasnika</div>
                   <div className="font-mono text-lg font-semibold tracking-widest">
                     {created.owner_pin ?? '—'}
                   </div>
@@ -278,7 +278,7 @@ export default function PortalCreatePage() {
                     disabled={!created.owner_pin}
                     className="mt-1 inline-flex h-9 items-center justify-center rounded-lg border border-black/10 bg-white px-3 text-xs font-semibold transition hover:bg-neutral-50 disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
                   >
-                    Copy
+                    Kopiraj
                   </button>
                 </div>
               </div>
@@ -289,7 +289,7 @@ export default function PortalCreatePage() {
                 onClick={() => setCreated(null)}
                 className="inline-flex h-10 items-center justify-center rounded-xl bg-brand-600 px-4 text-sm font-semibold text-white transition hover:bg-brand-700"
               >
-                Done
+                Gotovo
               </button>
             </div>
           </div>

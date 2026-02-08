@@ -37,10 +37,10 @@ const Dedicated = () => {
               />
             </div>
             <h2 className='text-center -mr-1 lg:text-start lg:leading-20 leading-14'>
-            “No apps. No logins. Just WhatsApp photo sharing.”
+            “Bez aplikacija. Bez prijave. Samo WhatsApp.”
             </h2>
             <p className='text-xl font-medium text-black/55 mt-5 text-center lg:text-start'>
-            Create a QR code for your event and let guests upload photos instantly via WhatsApp. No apps, no accounts, just memories in one shared gallery.
+            Kreirajte QR kod za svoj događaj i dopustite gostima da odmah dijele fotografije putem WhatsAppa. Bez aplikacija, bez računa — samo uspomene na jednom mjestu.
             </p>
 
           </div>

@@ -164,27 +164,27 @@ export default function LoginPage() {
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-600 text-white">
             💍
           </div>
-          <h1 className="text-2xl font-semibold tracking-[-0.02em]">Sign in</h1>
+          <h1 className="text-2xl font-semibold tracking-[-0.02em]">Prijavite se</h1>
           <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">
-            We’ll email you a magic link to access the portal.
+          Poslat ćemo vam čarobnu poveznicu za pristup portalu.
           </p>
         </div>
 
         <div className="rounded-2xl border border-black/5 bg-white p-6 shadow-card backdrop-blur dark:border-white/10 dark:bg-white/5">
           {sent ? (
             <div className="space-y-2 text-center" aria-live="polite">
-              <h2 className="text-lg font-semibold">Check your email</h2>
+              <h2 className="text-lg font-semibold">Provjerite Email - spam</h2>
               <p className="text-sm text-neutral-600 dark:text-neutral-300">
-                We sent a sign-in link to <span className="font-medium">{emailNorm}</span>. Open it on this device to continue.
+              Poslali smo poveznicu za prijavu na <span className="font-medium">{emailNorm}</span>. Otvorite je na ovom uređaju kako biste nastavili.
               </p>
 
               {secondsLeft > 0 ? (
                 <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                  You can request a new link in {secondsLeft}s.
+                  Novi link možete zatražiti za {secondsLeft}s.
                 </p>
               ) : (
                 <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                  Didn’t get it? Check spam/junk.
+                  Niste je dobili? Provjerite spam / neželjenu poštu.
                 </p>
               )}
 
@@ -196,13 +196,13 @@ export default function LoginPage() {
                 }}
                 className="mt-4 inline-flex h-11 w-full items-center justify-center rounded-xl border border-black/10 bg-white px-4 text-sm font-semibold text-neutral-900 transition hover:bg-neutral-50 dark:border-white/10 dark:bg-white/5 dark:text-neutral-100 dark:hover:bg-white/10"
               >
-                Use a different email
+                Koristite drugu e-mail adresu
               </button>
             </div>
           ) : (
             <form onSubmit={onSubmit} className="grid gap-3">
               <label htmlFor="email" className="text-sm font-medium">
-                Email address
+              E-mail adresa
               </label>
 
               <input
@@ -237,7 +237,7 @@ export default function LoginPage() {
         </div>
 
         <p className="mt-6 text-center text-xs text-neutral-500 dark:text-neutral-400">
-          By continuing you agree to our Terms & Privacy.
+        Nastavkom prihvaćate naše Uvjete korištenja i Pravila privatnosti.
         </p>
       </div>
     </main>

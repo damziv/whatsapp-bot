@@ -1,22 +1,17 @@
-// app/portal/layout.tsx
 'use client';
-
 
 import { ReactNode, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { getSupabaseBrowser } from '@/lib/supabase-browser';
 
-type Photographer = Record<string, unknown>;
-
 type MeResponse =
-  | { isPhotographer: true; isActive: boolean; photographer: Photographer }
-  | { isPhotographer: false; isActive: false }
+  | { isAdmin: boolean; isPhotographer?: boolean; isActive?: boolean; photographer?: any }
   | { error: string };
 
-export default function PortalLayout({ children }: { children: ReactNode }) {
+export default function AdminLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const [status, setStatus] = useState<'loading' | 'denied' | 'inactive' | 'ok'>('loading');
+  const [status, setStatus] = useState<'loading' | 'denied' | 'ok'>('loading');
   const [msg, setMsg] = useState<string>('');
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -47,15 +42,9 @@ export default function PortalLayout({ children }: { children: ReactNode }) {
         return;
       }
 
-      if (!('isPhotographer' in payload) || payload.isPhotographer !== true) {
+      if (!('isAdmin' in payload) || payload.isAdmin !== true) {
         setStatus('denied');
-        setMsg('Your portal access is not enabled yet.');
-        return;
-      }
-
-      if (!payload.isActive) {
-        setStatus('inactive');
-        setMsg('Your account is inactive. Please contact support.');
+        setMsg('Admin access is not enabled for this account.');
         return;
       }
 
@@ -102,11 +91,11 @@ export default function PortalLayout({ children }: { children: ReactNode }) {
     );
   }
 
-  if (status === 'denied' || status === 'inactive') {
+  if (status === 'denied') {
     return (
       <main className="min-h-screen bg-gradient-to-b from-brand-50 to-white px-4 py-10 dark:from-neutral-900 dark:to-neutral-950">
         <div className="mx-auto w-full max-w-3xl space-y-4">
-          <h1 className="text-2xl font-semibold tracking-[-0.02em]">Portal QRevent</h1>
+          <h1 className="text-2xl font-semibold tracking-[-0.02em]">Admin QRevent</h1>
           <div className="rounded-2xl border border-black/5 bg-white p-6 shadow-card dark:border-white/10 dark:bg-white/5">
             <p className="text-sm text-neutral-700 dark:text-neutral-300">{msg}</p>
 
@@ -124,16 +113,15 @@ export default function PortalLayout({ children }: { children: ReactNode }) {
     );
   }
 
-  // OK: show portal shell + children pages
   return (
     <div className="flex min-h-screen bg-gradient-to-b from-brand-50 to-white dark:from-neutral-900 dark:to-neutral-950">
       {/* Sidebar desktop */}
       <aside className="hidden w-64 border-r border-black/5 bg-white p-4 dark:border-white/10 dark:bg-neutral-900 md:block">
-        <div className="mb-6 text-lg font-semibold">📸 Portal</div>
+        <div className="mb-6 text-lg font-semibold">🛠️ Admin</div>
         <nav className="space-y-1">
-          <NavItem href="/portal/albums" label="Albumi" />
-          <NavItem href="/portal/create" label="Napravi Album" />
-          <NavItem href="/portal/settings" label="Postavke" />
+          <NavItem href="/admin" label="Dashboard" />
+          <NavItem href="/admin/users" label="Photographers" />
+          <NavItem href="/admin/albums" label="Albums" />
         </nav>
 
         <button
@@ -149,7 +137,7 @@ export default function PortalLayout({ children }: { children: ReactNode }) {
         <button onClick={() => setMenuOpen(true)} className="text-xl" aria-label="Menu">
           ☰
         </button>
-        <div className="font-semibold">Portal QRevent</div>
+        <div className="font-semibold">Admin QRevent</div>
         <button onClick={signOut} className="text-sm underline">
           Odjavi se
         </button>
@@ -160,13 +148,13 @@ export default function PortalLayout({ children }: { children: ReactNode }) {
         <div className="fixed inset-0 z-50 bg-black/50 md:hidden">
           <div className="absolute left-0 top-0 h-full w-64 bg-white p-4 dark:bg-neutral-900">
             <div className="mb-6 flex items-center justify-between">
-              <div className="font-semibold">📸 Portal</div>
+              <div className="font-semibold">🛠️ Admin</div>
               <button onClick={() => setMenuOpen(false)}>✕</button>
             </div>
             <nav className="space-y-1">
-              <NavItem href="/portal/albums" label="Albumi" />
-              <NavItem href="/portal/create" label="Kreiraj Album" />
-              <NavItem href="/portal/settings" label="Postavke" />
+              <NavItem href="/admin" label="Dashboard" />
+              <NavItem href="/admin/users" label="Photographers" />
+              <NavItem href="/admin/albums" label="Albums" />
             </nav>
           </div>
         </div>

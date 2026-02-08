@@ -16,6 +16,18 @@ export async function GET(req: NextRequest) {
 
   const userId = userData.user.id;
 
+  // Admin check (explicit table)
+  const { data: adminRow, error: aErr } = await supabaseAdmin
+    .from('admins')
+    .select('user_id')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (aErr) return NextResponse.json({ error: aErr.message }, { status: 500 });
+
+  const isAdmin = !!adminRow;
+
+  // Photographer check (your existing logic)
   const { data: photographer, error: pErr } = await supabaseAdmin
     .from('photographers')
     .select('id, company_name, quota_yearly, period_start, period_end, is_active')
@@ -25,10 +37,15 @@ export async function GET(req: NextRequest) {
   if (pErr) return NextResponse.json({ error: pErr.message }, { status: 500 });
 
   if (!photographer) {
-    return NextResponse.json({ isPhotographer: false, isActive: false });
+    return NextResponse.json({
+      isAdmin,
+      isPhotographer: false,
+      isActive: false,
+    });
   }
 
   return NextResponse.json({
+    isAdmin,
     isPhotographer: true,
     isActive: !!photographer.is_active,
     photographer,

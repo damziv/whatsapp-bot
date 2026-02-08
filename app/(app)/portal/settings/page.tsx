@@ -82,7 +82,7 @@ export default function SettingsPage() {
         if (!portalRes.ok || ('error' in portalJson && portalJson.error)) {
           // This could happen if photographer is not active, etc.
           // Don’t hard-fail settings page; just show the account card.
-          console.warn('portal/albums not available:', portalJson);
+          console.warn('portal/albumi nisu dostupni:', portalJson);
         }
 
         if (!cancelled) {
@@ -106,7 +106,7 @@ export default function SettingsPage() {
       <main className="min-h-screen bg-gradient-to-b from-brand-50 to-white px-4 py-10 dark:from-neutral-900 dark:to-neutral-950">
         <div className="mx-auto w-full max-w-3xl">
           <div className="rounded-2xl border border-black/5 bg-white p-6 shadow-card dark:border-white/10 dark:bg-white/5">
-            <p className="text-sm text-neutral-600 dark:text-neutral-300">Loading…</p>
+            <p className="text-sm text-neutral-600 dark:text-neutral-300">Učitavanje…</p>
           </div>
         </div>
       </main>
@@ -127,7 +127,7 @@ export default function SettingsPage() {
             onClick={() => window.location.reload()}
             className="inline-flex h-10 items-center justify-center rounded-xl border border-black/10 bg-white px-4 text-sm font-semibold transition hover:bg-neutral-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
           >
-            Retry
+            Ponovi
           </button>
         </div>
       </main>
@@ -143,9 +143,9 @@ export default function SettingsPage() {
         {/* Header */}
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold tracking-[-0.02em]">Settings</h1>
+            <h1 className="text-2xl font-semibold tracking-[-0.02em]">Postavke</h1>
             <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">
-              Account, plan and portal access.
+              Postavke računa, plana i portala
             </p>
           </div>
 
@@ -153,19 +153,19 @@ export default function SettingsPage() {
             onClick={signOut}
             className="inline-flex h-10 items-center justify-center rounded-xl border border-black/10 bg-white px-3 text-sm font-semibold transition hover:bg-neutral-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
           >
-            Sign out
+            Odjavi se
           </button>
         </div>
 
         {/* Account card */}
         <section className="rounded-2xl border border-black/5 bg-white p-6 shadow-card dark:border-white/10 dark:bg-white/5">
-          <h2 className="text-lg font-semibold tracking-[-0.01em]">Account</h2>
+          <h2 className="text-lg font-semibold tracking-[-0.01em]">Račun</h2>
 
           <div className="mt-4 grid gap-3 text-sm">
-            <Row label="Role" value={isPhotographer ? 'Photographer' : 'No portal access'} />
-            <Row label="Status" value={isActive ? 'Active' : 'Inactive'} />
+            <Row label="Uloga" value={isPhotographer ? 'Korisnik' : 'No portal access'} />
+            <Row label="Status" value={isActive ? 'Aktivan' : 'Ne aktivan'} />
             <Row
-              label="User ID"
+              label="ID korisnika"
               value={
                 isPhotographer && (me as any).photographer?.user_id
                   ? String((me as any).photographer.user_id)
@@ -173,7 +173,7 @@ export default function SettingsPage() {
               }
             />
             <Row
-              label="Photographer ID"
+              label="ID uloge"
               value={
                 isPhotographer && (me as any).photographer?.id
                   ? String((me as any).photographer.id)
@@ -184,13 +184,13 @@ export default function SettingsPage() {
 
           {!isPhotographer && (
             <div className="mt-4 rounded-xl border border-black/10 bg-black/5 p-4 text-sm text-neutral-700 dark:border-white/10 dark:bg-white/10 dark:text-neutral-200">
-              Your portal access is not enabled yet. Contact support and we’ll activate your account.
+              Pristup portalu još nije omogućen. Kontaktirajte podršku i aktivirat ćemo vaš račun.
             </div>
           )}
 
           {isPhotographer && !isActive && (
             <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-200">
-              Your account is inactive. Contact support.
+              Vaš račun je neaktivan. Kontaktirajte podršku.
             </div>
           )}
         </section>
@@ -201,42 +201,40 @@ export default function SettingsPage() {
 
           {portal && !('error' in portal) ? (
             <div className="mt-4 grid gap-3 text-sm">
-              <Row label="Albums used" value={usageText || '—'} />
-              <Row label="Yearly quota" value={String(portal.photographer.quota_yearly)} />
+              <Row label="Korišteno albuma" value={usageText || '—'} />
+              <Row label="Ukupno dostupno" value={String(portal.photographer.quota_yearly)} />
               <Row label="Period" value={periodText || '—'} />
             </div>
           ) : (
             <p className="mt-3 text-sm text-neutral-600 dark:text-neutral-300">
-              Plan details are not available right now.
-            </p>
+            Detalji plana trenutačno nisu dostupni.  
+                      </p>
           )}
         </section>
 
         {/* Support card */}
         <section className="rounded-2xl border border-black/5 bg-white p-6 shadow-card dark:border-white/10 dark:bg-white/5">
-          <h2 className="text-lg font-semibold tracking-[-0.01em]">Support</h2>
+          <h2 className="text-lg font-semibold tracking-[-0.01em]">Podrška</h2>
           <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">
-            Need help, invoice, or account activation? Contact support.
+          Trebate pomoć, račun ili aktivaciju računa? Kontaktirajte podršku.
           </p>
 
           <div className="mt-4 flex flex-wrap gap-2">
             <a
-              href="mailto:support@yourdomain.com"
+              href="mailto:zivkusic@gmail.com"
               className="inline-flex h-10 items-center justify-center rounded-xl bg-brand-600 px-4 text-sm font-semibold text-white transition hover:bg-brand-700"
             >
-              Email support
+              Email podrška
             </a>
             <button
-              onClick={() => navigator.clipboard.writeText('support@yourdomain.com')}
+              onClick={() => navigator.clipboard.writeText('zivkusic@gmail.com')}
               className="inline-flex h-10 items-center justify-center rounded-xl border border-black/10 bg-white px-4 text-sm font-semibold transition hover:bg-neutral-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
             >
-              Copy email
+              Kopiraj email
             </button>
           </div>
 
-          <p className="mt-3 text-xs text-neutral-500">
-            (Replace <span className="font-mono">support@yourdomain.com</span> with your real support email.)
-          </p>
+
         </section>
       </div>
     </main>

@@ -10,32 +10,32 @@ import { footerlinks } from '@/app/types/footerlinks'
 
 // header nav-links data
 const headerData: HeaderItem[] = [
-  { label: 'About Us', href: '#About' },
+  { label: 'O nama', href: '#About' },
   { label: 'FAQ', href: '#FAQ' },
-  { label: 'Join Us', href: '#Contact' }
+  { label: 'Kontakt', href: '#Contact' }
 ]
 
 // about data
 const Aboutdata: aboutdata[] = [
   {
-    heading: 'Create a QR Album',
+    heading: 'Izradi QR album',
     imgSrc: '/images/aboutus/imgOne.svg',
     paragraph:
-      'Create a private QR code for your wedding or event in seconds. No apps to install, no complicated setup.',
+      'Privatni QR kod za vjenčanje ili događaj — u nekoliko sekundi. Bez aplikacija. Bez komplicirane postavke.',
     link: '',
   },
   {
-    heading: 'Guests Upload via WhatsApp',
+    heading: 'Upload putem WhatsAppa',
     imgSrc: '/images/aboutus/imgTwo.svg',
     paragraph:
-      'Guests scan the QR code and send photos directly through WhatsApp. It works instantly on any phone.',
+      'Jedan QR kod. Svi trenuci. Fotografije stižu putem WhatsAppa — odmah, na svakom telefonu.',
     link: '',
   },
   {
-    heading: 'One Shared Gallery',
+    heading: 'Jedna zajednička galerija',
     imgSrc: '/images/aboutus/imgThree.svg',
     paragraph:
-      'All photos are automatically collected in one shared gallery that you can view, download, and share.',
+      'Sve fotografije automatski se prikupljaju u jednoj zajedničkoj galeriji koju možete pregledavati, preuzeti i dijeliti.',
     link: '',
   },
 ]
@@ -253,9 +253,9 @@ const FooterLinksData: footerlinks[] = [
   {
     section: 'Menu',
     links: [
-      { label: 'About Us', href: '#About' },
+      { label: 'O nama', href: '#About' },
       { label: 'FAQ', href: '#FAQ' },
-      { label: 'Join Us', href: '#Contact' },
+      { label: 'Kontakt', href: '#Contact' },
     ],
   },
 
