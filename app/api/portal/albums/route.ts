@@ -34,7 +34,7 @@ function code7() {
 function computeUtcWindow(isoDate: string) {
   const anchor = new Date(isoDate + 'T00:00:00Z').getTime();
   const start = new Date(anchor - 24 * 3600 * 1000).toISOString();
-  const end = new Date(anchor + 24 * 3600 * 1000).toISOString();
+  const end = new Date(anchor + 48 * 3600 * 1000).toISOString();
   return { start_at: start, end_at: end };
 }
 
