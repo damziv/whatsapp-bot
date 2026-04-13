@@ -27,7 +27,7 @@ const Join = () => {
                 href="mailto:zivkusic@gmail.com"
                 className="text-2xl font-semibold text-black hover:text-primary transition"
               >
-                zivkusic@gmail.com
+                info@qrevent.pro
               </a>
             </div>
 
