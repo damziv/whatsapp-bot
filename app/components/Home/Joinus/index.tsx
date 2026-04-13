@@ -24,7 +24,7 @@ const Join = () => {
                 Email
               </p>
               <a
-                href="mailto:zivkusic@gmail.com"
+                href="mailto:info@qrevent.pro"
                 className="text-2xl font-semibold text-black hover:text-primary transition"
               >
                 info@qrevent.pro
