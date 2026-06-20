@@ -33,6 +33,7 @@ type AlbumRow = {
   end_at: string | null;
   is_active: boolean;
   lang: string | null; // 'hr' | 'en' | null (null = auto-detect from phone)
+  names: string; // "Bride & Groom" (or '' if unknown)
 };
 
 type BindingWithAlbum = {
@@ -112,15 +113,13 @@ function resolveLang(albumLang: string | null | undefined, msisdn: string): Lang
   return langFromMsisdn(msisdn);
 }
 
+// Generic replies (no album context / no couple name needed).
 const MSG: Record<Lang, {
   promptScan: string;
   unknownCode: string;
-  notActive: string;
-  notOpen: string;
   bindError: string;
   onlyMedia: string;
   chooseFirst: string;
-  closed: string;
   duplicate: string;
   uploaded: string;
   videoUploaded: string;
@@ -129,12 +128,9 @@ const MSG: Record<Lang, {
   hr: {
     promptScan: 'Pošalji "ALBUM <code>" kako bi odabrao album (npr., ALBUM K3H9WT). Nakon toga šalji slike ili kratke videe. 📸🎥',
     unknownCode: 'Nepoznata šifra albuma. Molimo provjerite i pokušajte ponovno.',
-    notActive: 'Ovaj album nije aktivan.',
-    notOpen: 'Ovaj album još uvijek nije otvoren (izvan dozvoljenog vremena).',
     bindError: 'Greška u postavljanju albuma. Molimo pokušajte ponovno.',
     onlyMedia: 'Dozvoljene su samo slike i kratki videi. 📸🎥\nUpute: pošalji "ALBUM <code>" kako bi odabrao album.',
     chooseFirst: 'Molimo prvo odaberite album: pošaljite "ALBUM <code>" (skeniraj QR kod).',
-    closed: 'Ovaj album je trenutno zatvoren. ⏱️',
     duplicate: 'Izgleda kao duplikat. Preskočeno. 😉',
     uploaded: 'Postavljeno ✔️ Hvala!',
     videoUploaded: 'Video postavljen ✔️ Hvala!',
@@ -143,12 +139,9 @@ const MSG: Record<Lang, {
   en: {
     promptScan: 'Send "ALBUM <code>" to choose an album (e.g. ALBUM K3H9WT). Then send photos or short videos. 📸🎥',
     unknownCode: 'Unknown album code. Please check it and try again.',
-    notActive: 'This album is not active.',
-    notOpen: 'This album is not open yet (outside the allowed time).',
     bindError: 'Error setting the album. Please try again.',
     onlyMedia: 'Only photos and short videos are allowed. 📸🎥\nTip: send "ALBUM <code>" to choose an album.',
     chooseFirst: 'Please choose an album first: send "ALBUM <code>" (scan the QR code).',
-    closed: 'This album is currently closed. ⏱️',
     duplicate: 'Looks like a duplicate. Skipped. 😉',
     uploaded: 'Uploaded ✔️ Thanks!',
     videoUploaded: 'Video uploaded ✔️ Thanks!',
@@ -156,18 +149,66 @@ const MSG: Record<Lang, {
   },
 };
 
-/** The album-set confirmation needs interpolation, so build it per language. */
+/** Couple-named subject for status replies, e.g. "Ana & Marko's wedding album". */
+function albumNamePhrase(lang: Lang, names: string): string {
+  if (!names) return lang === 'hr' ? 'Ovaj album' : 'This album';
+  return lang === 'hr' ? `Album za vjenčanje ${names}` : `${names}'s wedding album`;
+}
+
+function notActiveMsg(lang: Lang, names: string): string {
+  const n = albumNamePhrase(lang, names);
+  return lang === 'hr' ? `${n} još nije aktivan.` : `${n} is not active.`;
+}
+
+function notOpenMsg(lang: Lang, names: string): string {
+  const n = albumNamePhrase(lang, names);
+  return lang === 'hr'
+    ? `${n} još nije otvoren (izvan dozvoljenog vremena).`
+    : `${n} is not open yet (outside the allowed time).`;
+}
+
+function closedMsg(lang: Lang, names: string): string {
+  const n = albumNamePhrase(lang, names);
+  return lang === 'hr' ? `${n} je trenutno zatvoren. ⏱️` : `${n} is currently closed. ⏱️`;
+}
+
+/** Open confirmation — couple-named + localized. */
 function albumSetMsg(lang: Lang, album: AlbumRow): string {
+  const n = album.names;
   if (lang === 'hr') {
-    return `Album postavljen, nema potrebe ponovno skenirati link ✅
-Događaj: ${album.album_slug}
+    const head = n ? `Album za vjenčanje ${n} je otvoren ✅` : 'Album je otvoren ✅';
+    return `${head}
 Vrijeme: ${fmt(album.start_at)} → ${fmt(album.end_at)}
-Sada šaljite slike ili kratke videe.`;
+Sada šaljite svoje slike ili kratke videe. 📸🎥`;
   }
-  return `Album set — no need to scan the link again ✅
-Event: ${album.album_slug}
+  const head = n ? `${n}'s wedding album is open ✅` : 'The album is open ✅';
+  return `${head}
 Time: ${fmt(album.start_at)} → ${fmt(album.end_at)}
-Now send photos or short videos.`;
+Now send your photos or short videos. 📸🎥`;
+}
+
+/** Build "Bride & Groom" from a nested album row (events → profiles). */
+function coupleNamesFrom(raw: any): string {
+  const ev = Array.isArray(raw?.events) ? raw.events[0] : raw?.events;
+  const prof = ev ? (Array.isArray(ev.profiles) ? ev.profiles[0] : ev.profiles) : null;
+  const bride = (prof?.bride_name || '').trim();
+  const groom = (prof?.groom_name || '').trim();
+  return bride && groom ? `${bride} & ${groom}` : bride || groom || '';
+}
+
+/** Flatten a PostgREST album row (with nested events/profiles) into AlbumRow. */
+function flattenAlbum(raw: any): AlbumRow {
+  return {
+    id: String(raw.id),
+    code: raw.code,
+    event_slug: raw.event_slug,
+    album_slug: raw.album_slug,
+    start_at: raw.start_at ?? null,
+    end_at: raw.end_at ?? null,
+    is_active: !!raw.is_active,
+    lang: raw.lang ?? null,
+    names: coupleNamesFrom(raw),
+  };
 }
 
 function extFromMime(mime: string) {
@@ -190,12 +231,13 @@ function extFromMime(mime: string) {
 async function getAlbumByCode(code: string): Promise<AlbumRow | null> {
   const { data, error } = await supabaseAdmin
     .from('albums')
-    .select('id, code, event_slug, album_slug, start_at, end_at, is_active, lang')
+    .select('id, code, event_slug, album_slug, start_at, end_at, is_active, lang, events:event_id(profiles:profile_id(bride_name, groom_name))')
     .eq('code', code)
     .maybeSingle();
 
   if (error) throw error;
-  return (data ?? null) as AlbumRow | null;
+  if (!data) return null;
+  return flattenAlbum(data);
 }
 
 async function upsertBinding(msisdn: string, album_id: string) {
@@ -212,9 +254,9 @@ function normalizeBinding(row: unknown): BindingWithAlbum {
   let albumObj: AlbumRow | null = null;
 
   if (Array.isArray(rawAlbums)) {
-    albumObj = (rawAlbums[0] ?? null) as AlbumRow | null;
+    albumObj = rawAlbums[0] ? flattenAlbum(rawAlbums[0]) : null;
   } else if (rawAlbums && typeof rawAlbums === 'object') {
-    albumObj = rawAlbums as AlbumRow;
+    albumObj = flattenAlbum(rawAlbums);
   }
 
   return {
@@ -226,7 +268,7 @@ function normalizeBinding(row: unknown): BindingWithAlbum {
 async function getBindingWithAlbum(msisdn: string): Promise<BindingWithAlbum | null> {
   const { data, error } = await supabaseAdmin
     .from('msisdn_bindings')
-    .select('album_id, albums:album_id(id, code, event_slug, album_slug, start_at, end_at, is_active, lang)')
+    .select('album_id, albums:album_id(id, code, event_slug, album_slug, start_at, end_at, is_active, lang, events:event_id(profiles:profile_id(bride_name, groom_name)))')
     .eq('msisdn', msisdn)
     .maybeSingle();
 
@@ -317,7 +359,8 @@ export async function POST(req: NextRequest) {
       // --- TEXT: ALBUM <code> handler ---
       if (type === 'text') {
         const text = (msg.text?.body || '').trim();
-        const m = /^ALBUM\s+([A-Za-z0-9_-]{3,40})$/i.exec(text);
+        // Non-anchored so a friendly pre-filled message ("…(ALBUM K3H9WT)") still matches.
+        const m = /ALBUM\s+([A-Za-z0-9_-]{3,40})/i.exec(text);
         if (!m) {
           await sendWhatsApp(waPhoneId, from, MSG[langFromMsisdn(from)].promptScan);
           return;
@@ -331,12 +374,12 @@ export async function POST(req: NextRequest) {
           }
           const lang = resolveLang(album.lang, from);
           if (!album.is_active) {
-            await sendWhatsApp(waPhoneId, from, MSG[lang].notActive);
+            await sendWhatsApp(waPhoneId, from, notActiveMsg(lang, album.names));
             return;
           }
           const now = new Date();
           if (!withinWindow(now, album.start_at, album.end_at)) {
-            await sendWhatsApp(waPhoneId, from, MSG[lang].notOpen);
+            await sendWhatsApp(waPhoneId, from, notOpenMsg(lang, album.names));
             return;
           }
           await upsertBinding(from, album.id);
@@ -367,7 +410,7 @@ export async function POST(req: NextRequest) {
           // try from caption for first-time users
           const caption = (isImage ? msg.image?.caption : msg.video?.caption)?.trim();
           if (caption) {
-            const m2 = /^ALBUM\s+([A-Za-z0-9_-]{3,40})$/i.exec(caption);
+            const m2 = /ALBUM\s+([A-Za-z0-9_-]{3,40})/i.exec(caption);
             if (m2) {
               const maybe = await getAlbumByCode(m2[1].toUpperCase());
               if (maybe && maybe.is_active && withinWindow(new Date(), maybe.start_at, maybe.end_at)) {
@@ -390,7 +433,7 @@ export async function POST(req: NextRequest) {
         // Enforce window
         const now = new Date();
         if (!withinWindow(now, finalAlbum.start_at, finalAlbum.end_at)) {
-          await sendWhatsApp(waPhoneId, from, MSG[lang].closed);
+          await sendWhatsApp(waPhoneId, from, closedMsg(lang, finalAlbum.names));
           return;
         }
 
