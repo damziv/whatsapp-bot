@@ -59,13 +59,18 @@ function GalleryInner() {
   }, [code]);
 
   const reload = useCallback(async () => {
+    // Without a code there is no album to show — never load the whole library.
+    if (!code) {
+      setItems([]);
+      setMeta(null);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
-    const qs = code ? `?code=${encodeURIComponent(code)}` : '';
+    const qs = `?code=${encodeURIComponent(code)}`;
     const [g, m] = await Promise.all([
       fetch(`/api/gallery${qs}`).then((r) => r.json()),
-      code
-        ? fetch(`/api/albums?code=${encodeURIComponent(code)}`).then((r) => (r.ok ? r.json() : null))
-        : Promise.resolve(null),
+      fetch(`/api/albums?code=${encodeURIComponent(code)}`).then((r) => (r.ok ? r.json() : null)),
     ]);
 
     setItems((g?.items as Item[]) || []);
@@ -262,7 +267,13 @@ function GalleryInner() {
           </div>
         )}
 
-        {!loading && items.length === 0 && (
+        {!loading && !code && (
+          <div className="rounded-2xl border border-black/5 bg-white p-6 text-sm shadow-card dark:border-white/10 dark:bg-white/5">
+            {t('missingCode')}
+          </div>
+        )}
+
+        {!loading && code && items.length === 0 && (
           <div className="rounded-2xl border border-black/5 bg-white p-6 text-sm shadow-card dark:border-white/10 dark:bg-white/5">
             {t('noPhotos')}
           </div>

@@ -25,7 +25,13 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const code = searchParams.get('code');
 
-  // 1) Resolve album to (event_slug, album_slug) if code provided
+  // A code is REQUIRED. Without it we must never return media — otherwise
+  // /gallery with no code would expose every photo from every album.
+  if (!code) {
+    return NextResponse.json({ items: [] }, { headers: { 'Cache-Control': 'no-store' } });
+  }
+
+  // 1) Resolve album to (event_slug, album_slug)
   let filter: { event_slug?: string; album_slug?: string } = {};
   if (code) {
     const { data: album, error: albErr } = await supabaseAdmin
