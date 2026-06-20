@@ -202,6 +202,22 @@
     "errNetwork": "Problem s mrežom. Provjerite vezu i pokušajte ponovno.",
     "errCooldown": "Pričekajte trenutak prije nego zatražite novu poveznicu."
   },
+  "Register": {
+    "title": "Zatraži pristup",
+    "subtitle": "Recite nam nešto o sebi i postavit ćemo vaš fotografski račun.",
+    "nameLabel": "Vaše ime",
+    "namePlaceholder": "npr. Ana Photography",
+    "emailLabel": "Email",
+    "messageLabel": "Želite li još nešto dodati? (neobavezno)",
+    "submit": "Zatraži pristup",
+    "submitting": "Šaljem…",
+    "successTitle": "Zahtjev poslan ✓",
+    "successBody": "Hvala! Pregledat ćemo ga i javiti vam se na {email} kada vaš račun bude spreman.",
+    "errInvalid": "Unesite svoje ime i ispravnu e-mail adresu.",
+    "errFailed": "Nešto je pošlo po zlu. Pokušajte ponovno.",
+    "haveAccount": "Već imate račun?",
+    "signIn": "Prijava"
+  },
   "Demo": {
     "eyebrow": "Za fotografe i organizatore događaja",
     "titleLine1": "Neka vaši mladenci prožive",

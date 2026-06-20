@@ -120,6 +120,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         <div className="mb-6 text-lg font-semibold">🛠️ Admin</div>
         <nav className="space-y-1">
           <NavItem href="/admin" label="Dashboard" />
+          <NavItem href="/admin/requests" label="Requests" />
           <NavItem href="/admin/users" label="Photographers" />
           <NavItem href="/admin/albums" label="Albums" />
         </nav>
@@ -153,6 +154,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             </div>
             <nav className="space-y-1">
               <NavItem href="/admin" label="Dashboard" />
+              <NavItem href="/admin/requests" label="Requests" />
               <NavItem href="/admin/users" label="Photographers" />
               <NavItem href="/admin/albums" label="Albums" />
             </nav>

@@ -90,7 +90,7 @@ export default function DemoPage() {
             {t('tryDemoCta')}
           </button>
           <a
-            href="/login"
+            href="/register"
             className="inline-flex h-12 items-center justify-center rounded-full border border-black/10 bg-white px-7 text-base font-semibold text-neutral-900 transition hover:bg-neutral-50 dark:border-white/10 dark:bg-white/5 dark:text-neutral-100 dark:hover:bg-white/10"
           >
             {t('getStarted')}
@@ -209,7 +209,7 @@ export default function DemoPage() {
           {t('convertDesc')}
         </p>
         <a
-          href="/login"
+          href="/register"
           className="mt-6 inline-flex h-12 items-center justify-center rounded-full bg-brand-600 px-8 text-base font-semibold text-white transition hover:bg-brand-700"
         >
           {t('createAccount')}

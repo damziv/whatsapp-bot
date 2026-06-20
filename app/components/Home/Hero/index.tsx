@@ -32,7 +32,7 @@ const Hero = () => {
             <h1>
             {t('heroTitle')}
             </h1>
-            <Link href={'/login'}>
+            <Link href={'/register'}>
               <button className='bg-primary text-white text-xl font-semibold py-5 px-12 rounded-full hover:bg-darkmode hover:cursor-pointer mt-10'>
                 {t('heroCta')}
               </button>

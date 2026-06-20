@@ -202,6 +202,22 @@
     "errNetwork": "Network issue detected. Please check your connection and try again.",
     "errCooldown": "Please wait a moment before requesting another link."
   },
+  "Register": {
+    "title": "Request access",
+    "subtitle": "Tell us a bit about you and we'll set up your photographer account.",
+    "nameLabel": "Your name",
+    "namePlaceholder": "e.g. Ana Photography",
+    "emailLabel": "Email",
+    "messageLabel": "Anything we should know? (optional)",
+    "submit": "Request access",
+    "submitting": "Sending…",
+    "successTitle": "Request sent ✓",
+    "successBody": "Thanks! We'll review it and email you at {email} once your account is ready.",
+    "errInvalid": "Please enter your name and a valid email.",
+    "errFailed": "Something went wrong. Please try again.",
+    "haveAccount": "Already have an account?",
+    "signIn": "Sign in"
+  },
   "Demo": {
     "eyebrow": "For photographers & event pros",
     "titleLine1": "Let your couples relive",
