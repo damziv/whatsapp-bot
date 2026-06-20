@@ -2,27 +2,22 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
-import { footerlinks } from '@/app/types/footerlinks'
+import { useTranslations } from 'next-intl'
 
 const footer = () => {
-  // fetch data
+  const tf = useTranslations('Footer')
+  const tNav = useTranslations('Nav')
 
-  const [footerlinks, setFooterLinks] = useState<footerlinks[]>([])
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch('/api/data')
-        if (!res.ok) throw new Error('Failed to fetch')
-        const data = await res.json()
-        setFooterLinks(data.FooterLinksData)
-      } catch (error) {
-        console.error('Error fetching services:', error)
-      }
-    }
-    fetchData()
-  }, [])
+  const sections = [
+    {
+      section: tf('menuTitle'),
+      links: [
+        { label: tNav('about'), href: '#About' },
+        { label: tNav('faq'), href: '#FAQ' },
+        { label: tNav('contact'), href: '#Contact' },
+      ],
+    },
+  ]
 
   return (
     <div className='bg-black' id='first-section'>
@@ -31,7 +26,7 @@ const footer = () => {
           {/* COLUMN-1 */}
           <div className='col-span-4'>
             <h4 className='text-white text-3xl leading-9 mb-4 lg:mb-20'>
-              QR Event
+              {tf('brand')}
             </h4>
             <div className='flex items-center gap-4'>
               <div className='footer-icons'>
@@ -67,18 +62,18 @@ const footer = () => {
             </div>
           </div>
           {/* CLOUMN-2/3 */}
-          {footerlinks.map((item, i) => (
+          {sections.map((item, i) => (
             <div key={i} className='group relative col-span-2'>
               <p className='text-white text-xl font-extrabold mb-9'>
                 {item.section}
               </p>
               <ul>
-                {item.links.map((item, i) => (
-                  <li key={i} className='mb-5'>
+                {item.links.map((link, j) => (
+                  <li key={j} className='mb-5'>
                     <Link
-                      href={`${item.href}`}
+                      href={`${link.href}`}
                       className='text-white text-lg font-normal mb-6 space-links hover:text-white/60 hover:underline'>
-                      {item.label}
+                      {link.label}
                     </Link>
                   </li>
                 ))}
@@ -93,7 +88,7 @@ const footer = () => {
           <div className='mt-4 grid grid-cols-1 gap-y-10 gap-x-16 sm:grid-cols-2 xl:gap-x-8'>
             <div>
               <p className='text-center md:text-start text-white text-lg'>
-                @2026 - All Rights Reserved by{' '}
+                {tf('rights')}{' '}
                 <Link
                   href='https://getnextjstemplates.com/'
                   target='_blank'
@@ -106,12 +101,12 @@ const footer = () => {
             <div className='flex justify-center md:justify-end'>
               <Link href='/'>
                 <p className='text-base text-white pr-6 hover:text-white/60 hover:underline'>
-                  Privacy policy
+                  {tf('privacy')}
                 </p>
               </Link>
               <Link href='/'>
                 <p className='text-base text-white pl-6 border-solid border-l border-footer hover:text-white/60 hover:underline'>
-                  Terms & conditions
+                  {tf('terms')}
                 </p>
               </Link>
             </div>

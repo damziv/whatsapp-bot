@@ -1,14 +1,17 @@
 'use client'
 
 import { Key, useEffect, useRef, useState } from 'react'
-import Link from 'next/link'
 import { useTheme } from 'next-themes'
+import { useLocale, useTranslations } from 'next-intl'
+import { Link } from '@/i18n/navigation'
 import { HeaderItem } from '@/app/types/menu'
 import Logo from './Logo'
 import HeaderLink from './Navigation/HeaderLink'
 import MobileHeaderLink from './Navigation/MobileHeaderLink'
+import LanguageSwitcher from './LanguageSwitcher'
 
 const Header: React.FC = () => {
+  const t = useTranslations('Header')
   const [navbarOpen, setNavbarOpen] = useState(false)
   const [sticky, setSticky] = useState(false)
 
@@ -42,21 +45,15 @@ const Header: React.FC = () => {
     document.body.style.overflow = navbarOpen ? 'hidden' : ''
   }, [navbarOpen])
 
-  const [headerData, setHeaderData] = useState<HeaderItem[]>([])
+  const tNav = useTranslations('Nav')
+  const locale = useLocale()
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch('/api/data')
-        if (!res.ok) throw new Error('Failed to fetch')
-        const data = await res.json()
-        setHeaderData(data.headerData)
-      } catch (error) {
-        console.error('Error fetching header data:', error)
-      }
-    }
-    fetchData()
-  }, [])
+  const headerData: HeaderItem[] = [
+    { label: tNav('demo'), href: `/${locale}/demo` },
+    { label: tNav('about'), href: '#About' },
+    { label: tNav('faq'), href: '#FAQ' },
+    { label: tNav('contact'), href: '#Contact' },
+  ]
 
   return (
     <header
@@ -86,11 +83,12 @@ const Header: React.FC = () => {
             }`}
           >
             {/* Desktop CTAs */}
+            <LanguageSwitcher />
             <Link
               href="/login"
               className="hidden lg:block bg-darkmode text-white hover:bg-transparent hover:text-darkmode border border-darkmode px-4 py-2 rounded-lg"
             >
-              Sign In
+              {t('signIn')}
             </Link>
 
             {/* Mobile burger */}
@@ -136,12 +134,15 @@ const Header: React.FC = () => {
             )}
 
             <div className="mt-4 flex flex-col space-y-4 w-full">
+              <div className="flex justify-start">
+                <LanguageSwitcher />
+              </div>
               <Link
                 href="/login"
                 className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-blue-700"
                 onClick={() => setNavbarOpen(false)}
               >
-                Sign In
+                {t('signIn')}
               </Link>
 
             </div>

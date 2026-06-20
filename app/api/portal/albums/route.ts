@@ -2,6 +2,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'node:crypto';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
 function getBearer(req: NextRequest) {
@@ -36,6 +37,16 @@ function computeUtcWindow(isoDate: string) {
   const start = new Date(anchor - 24 * 3600 * 1000).toISOString();
   const end = new Date(anchor + 48 * 3600 * 1000).toISOString();
   return { start_at: start, end_at: end };
+}
+
+// Owner PIN (same scheme as reset-pin / owner-login routes)
+function pin6() {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+function hashPin(pin: string) {
+  const salt = process.env.OWNER_PIN_SALT || 'dev-salt';
+  return crypto.createHash('sha256').update(pin + salt).digest('hex');
 }
 
 // -------------------- GET --------------------
@@ -108,6 +119,7 @@ export async function POST(req: NextRequest) {
         bride_name: string;
         groom_name: string;
         event_date?: string; // YYYY-MM-DD (optional)
+        lang?: string; // 'hr' | 'en' | undefined (undefined = auto-detect)
       };
 
   if (!body?.bride_name || !body?.groom_name) {
@@ -163,6 +175,14 @@ export async function POST(req: NextRequest) {
 
   const eventId = evRow.id as string;
 
+  // Owner PIN: generate once here so the couple can unlock "Manage gallery"
+  // immediately. We store only the hash; the plaintext is returned a single time.
+  const ownerPin = pin6();
+  const ownerPinHash = hashPin(ownerPin);
+
+  // Bot language for this album: explicit hr/en, or null = auto-detect per guest.
+  const albumLang = body.lang === 'hr' || body.lang === 'en' ? body.lang : null;
+
   let code: string | null = null;
   for (let i = 0; i < 7; i++) {
     const candidate = code7();
@@ -174,6 +194,9 @@ export async function POST(req: NextRequest) {
       start_at,
       end_at,
       is_active: true,
+      owner_pin_hash: ownerPinHash,
+      owner_pin_set_at: new Date().toISOString(),
+      lang: albumLang,
     });
 
     if (!insertErr) {
@@ -189,7 +212,8 @@ export async function POST(req: NextRequest) {
   const share_link = `${origin}/w?code=${encodeURIComponent(code)}`;
   const gallery_link = `${origin}/gallery?code=${encodeURIComponent(code)}`;
 
-  // IMPORTANT: we never return the PIN (you store only hash); reset-pin route returns fresh PIN once.
+  // We store only the PIN hash; the plaintext is returned here exactly once.
+  // The photographer can later rotate it via the reset-pin route.
   return NextResponse.json({
     album: {
       code,
@@ -201,6 +225,7 @@ export async function POST(req: NextRequest) {
       is_active: true,
       share_link,
       gallery_link,
+      owner_pin: ownerPin,
     },
   });
 }

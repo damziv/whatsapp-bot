@@ -1,4 +1,4 @@
-// app/api/album/route.ts
+// app/api/albums/route.ts — public album metadata by code (used by gallery pages)
 export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';

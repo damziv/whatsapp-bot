@@ -32,6 +32,7 @@ type AlbumRow = {
   start_at: string | null;
   end_at: string | null;
   is_active: boolean;
+  lang: string | null; // 'hr' | 'en' | null (null = auto-detect from phone)
 };
 
 type BindingWithAlbum = {
@@ -83,8 +84,90 @@ function cryptoRandom() {
   });
 }
 
+/**
+ * New uploads auto-expire 2 months from now. Only set on new media, so photos
+ * that already existed before this feature (expires_at = null) are never purged.
+ */
+function twoMonthsFromNow(): string {
+  const d = new Date();
+  d.setMonth(d.getMonth() + 2);
+  return d.toISOString();
+}
+
 function fmt(dt?: string | null) {
   return dt ? new Date(dt).toLocaleString() : 'N/A';
+}
+
+// -------------------- LANGUAGE --------------------
+type Lang = 'hr' | 'en';
+
+/** Auto-detect language from the guest's phone country code (Croatia → hr, else en). */
+function langFromMsisdn(msisdn: string): Lang {
+  return msisdn.startsWith('385') ? 'hr' : 'en';
+}
+
+/** Album's explicit language wins (hr/en); otherwise auto-detect from the number. */
+function resolveLang(albumLang: string | null | undefined, msisdn: string): Lang {
+  if (albumLang === 'hr' || albumLang === 'en') return albumLang;
+  return langFromMsisdn(msisdn);
+}
+
+const MSG: Record<Lang, {
+  promptScan: string;
+  unknownCode: string;
+  notActive: string;
+  notOpen: string;
+  bindError: string;
+  onlyMedia: string;
+  chooseFirst: string;
+  closed: string;
+  duplicate: string;
+  uploaded: string;
+  videoUploaded: string;
+  uploadError: string;
+}> = {
+  hr: {
+    promptScan: 'Pošalji "ALBUM <code>" kako bi odabrao album (npr., ALBUM K3H9WT). Nakon toga šalji slike ili kratke videe. 📸🎥',
+    unknownCode: 'Nepoznata šifra albuma. Molimo provjerite i pokušajte ponovno.',
+    notActive: 'Ovaj album nije aktivan.',
+    notOpen: 'Ovaj album još uvijek nije otvoren (izvan dozvoljenog vremena).',
+    bindError: 'Greška u postavljanju albuma. Molimo pokušajte ponovno.',
+    onlyMedia: 'Dozvoljene su samo slike i kratki videi. 📸🎥\nUpute: pošalji "ALBUM <code>" kako bi odabrao album.',
+    chooseFirst: 'Molimo prvo odaberite album: pošaljite "ALBUM <code>" (skeniraj QR kod).',
+    closed: 'Ovaj album je trenutno zatvoren. ⏱️',
+    duplicate: 'Izgleda kao duplikat. Preskočeno. 😉',
+    uploaded: 'Postavljeno ✔️ Hvala!',
+    videoUploaded: 'Video postavljen ✔️ Hvala!',
+    uploadError: 'Upss greška. Molimo pokušajte ponovno.',
+  },
+  en: {
+    promptScan: 'Send "ALBUM <code>" to choose an album (e.g. ALBUM K3H9WT). Then send photos or short videos. 📸🎥',
+    unknownCode: 'Unknown album code. Please check it and try again.',
+    notActive: 'This album is not active.',
+    notOpen: 'This album is not open yet (outside the allowed time).',
+    bindError: 'Error setting the album. Please try again.',
+    onlyMedia: 'Only photos and short videos are allowed. 📸🎥\nTip: send "ALBUM <code>" to choose an album.',
+    chooseFirst: 'Please choose an album first: send "ALBUM <code>" (scan the QR code).',
+    closed: 'This album is currently closed. ⏱️',
+    duplicate: 'Looks like a duplicate. Skipped. 😉',
+    uploaded: 'Uploaded ✔️ Thanks!',
+    videoUploaded: 'Video uploaded ✔️ Thanks!',
+    uploadError: 'Oops, an error occurred. Please try again.',
+  },
+};
+
+/** The album-set confirmation needs interpolation, so build it per language. */
+function albumSetMsg(lang: Lang, album: AlbumRow): string {
+  if (lang === 'hr') {
+    return `Album postavljen, nema potrebe ponovno skenirati link ✅
+Događaj: ${album.album_slug}
+Vrijeme: ${fmt(album.start_at)} → ${fmt(album.end_at)}
+Sada šaljite slike ili kratke videe.`;
+  }
+  return `Album set — no need to scan the link again ✅
+Event: ${album.album_slug}
+Time: ${fmt(album.start_at)} → ${fmt(album.end_at)}
+Now send photos or short videos.`;
 }
 
 function extFromMime(mime: string) {
@@ -107,7 +190,7 @@ function extFromMime(mime: string) {
 async function getAlbumByCode(code: string): Promise<AlbumRow | null> {
   const { data, error } = await supabaseAdmin
     .from('albums')
-    .select('id, code, event_slug, album_slug, start_at, end_at, is_active')
+    .select('id, code, event_slug, album_slug, start_at, end_at, is_active, lang')
     .eq('code', code)
     .maybeSingle();
 
@@ -143,7 +226,7 @@ function normalizeBinding(row: unknown): BindingWithAlbum {
 async function getBindingWithAlbum(msisdn: string): Promise<BindingWithAlbum | null> {
   const { data, error } = await supabaseAdmin
     .from('msisdn_bindings')
-    .select('album_id, albums:album_id(id, code, event_slug, album_slug, start_at, end_at, is_active)')
+    .select('album_id, albums:album_id(id, code, event_slug, album_slug, start_at, end_at, is_active, lang)')
     .eq('msisdn', msisdn)
     .maybeSingle();
 
@@ -236,42 +319,32 @@ export async function POST(req: NextRequest) {
         const text = (msg.text?.body || '').trim();
         const m = /^ALBUM\s+([A-Za-z0-9_-]{3,40})$/i.exec(text);
         if (!m) {
-          await sendWhatsApp(
-            waPhoneId,
-            from,
-            'Pošalji "ALBUM <code>" kako bi odabrao album (npr., ALBUM K3H9WT). Nakon toga šalji slike ili kratke videe. 📸🎥'
-          );
+          await sendWhatsApp(waPhoneId, from, MSG[langFromMsisdn(from)].promptScan);
           return;
         }
         const code = m[1].toUpperCase();
         try {
           const album = await getAlbumByCode(code);
           if (!album) {
-            await sendWhatsApp(waPhoneId, from, 'Nepoznata šifra albuma. Molimo provjerite i pokušajte ponovno.');
+            await sendWhatsApp(waPhoneId, from, MSG[langFromMsisdn(from)].unknownCode);
             return;
           }
+          const lang = resolveLang(album.lang, from);
           if (!album.is_active) {
-            await sendWhatsApp(waPhoneId, from, 'Ovaj album nije aktivan.');
+            await sendWhatsApp(waPhoneId, from, MSG[lang].notActive);
             return;
           }
           const now = new Date();
           if (!withinWindow(now, album.start_at, album.end_at)) {
-            await sendWhatsApp(waPhoneId, from, 'Ovaj album još uvijek nije otvoren (izvan dozvoljenog vremena).');
+            await sendWhatsApp(waPhoneId, from, MSG[lang].notOpen);
             return;
           }
           await upsertBinding(from, album.id);
-          await sendWhatsApp(
-            waPhoneId,
-            from,
-            `Album postavljen, nema potrebe ponovno skenirati link ✅
-Događaj: ${album.album_slug}
-Vrijeme: ${fmt(album.start_at)} → ${fmt(album.end_at)}
-Sada šaljite slike ili kratke videe.`
-          );
+          await sendWhatsApp(waPhoneId, from, albumSetMsg(lang, album));
         } catch (err: unknown) {
           const message = err instanceof Error ? err.message : String(err);
           console.error('album bind error:', message);
-          await sendWhatsApp(waPhoneId, from, 'Greška u postavljanju albuma. Molimo pokušajte ponovno.');
+          await sendWhatsApp(waPhoneId, from, MSG[langFromMsisdn(from)].bindError);
         }
         return;
       }
@@ -281,11 +354,7 @@ Sada šaljite slike ili kratke videe.`
       const isVideo = type === 'video' || isVideoDocument;
 
       if (!isImage && !isVideo) {
-        await sendWhatsApp(
-          waPhoneId,
-          from,
-          'Dozvoljene su samo slike i kratki videi. 📸🎥\nUpute: pošalji “ALBUM <code>” kako bi odabrao album.'
-        );
+        await sendWhatsApp(waPhoneId, from, MSG[langFromMsisdn(from)].onlyMedia);
         return;
       }
 
@@ -312,18 +381,16 @@ Sada šaljite slike ili kratke videe.`
         const finalAlbum = binding2?.albums;
 
         if (!finalAlbum) {
-          await sendWhatsApp(
-            waPhoneId,
-            from,
-            'Molimo prvo odaberite album: pošaljite "ALBUM <code>" (skeniraj QR kod).'
-          );
+          await sendWhatsApp(waPhoneId, from, MSG[langFromMsisdn(from)].chooseFirst);
           return;
         }
+
+        const lang = resolveLang(finalAlbum.lang, from);
 
         // Enforce window
         const now = new Date();
         if (!withinWindow(now, finalAlbum.start_at, finalAlbum.end_at)) {
-          await sendWhatsApp(waPhoneId, from, 'Ovaj album je trenutno zatvoren. ⏱️');
+          await sendWhatsApp(waPhoneId, from, MSG[lang].closed);
           return;
         }
 
@@ -344,7 +411,7 @@ Sada šaljite slike ili kratke videe.`
           .limit(1);
 
         if (!dup.error && dup.data && dup.data.length > 0) {
-          await sendWhatsApp(waPhoneId, from, 'Izgleda kao duplikat. Preskočeno. 😉');
+          await sendWhatsApp(waPhoneId, from, MSG[lang].duplicate);
           return;
         }
 
@@ -366,13 +433,14 @@ Sada šaljite slike ili kratke videe.`
           content_hash: hash,
           event_slug: finalAlbum.event_slug,
           album_slug: finalAlbum.album_slug,
+          expires_at: twoMonthsFromNow(),
         });
 
-        await sendWhatsApp(waPhoneId, from, isVideo ? 'Video postavljen ✔️ Hvala!' : 'Postavljeno ✔️ Hvala!');
+        await sendWhatsApp(waPhoneId, from, isVideo ? MSG[lang].videoUploaded : MSG[lang].uploaded);
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
         console.error('Upload error:', message);
-        await sendWhatsApp(waPhoneId, from, 'Upss greška. Molimo pokušajte ponovno.');
+        await sendWhatsApp(waPhoneId, from, MSG[langFromMsisdn(from)].uploadError);
       }
     })
   );

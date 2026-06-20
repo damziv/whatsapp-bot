@@ -3,8 +3,10 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { Icon } from '@iconify/react/dist/iconify.js'
+import { useTranslations } from 'next-intl'
 
 const Hero = () => {
+  const t = useTranslations('Home')
   const leftAnimation = {
     initial: { x: '-100%', opacity: 0 },
     animate: { x: 0, opacity: 1 },
@@ -25,14 +27,14 @@ const Hero = () => {
         <div className='grid grid-cols-12 justify-center items-center'>
           <div className='col-span-12 xl:col-span-5 lg:col-span-6 md:col-span-12 sm:col-span-12'>
             <div className='py-2 px-5 bg-primary/15 rounded-full w-fit'>
-              <p className='text-primary text-lg font-bold'>QR Events</p>
+              <p className='text-primary text-lg font-bold'>{t('heroEyebrow')}</p>
             </div>
             <h1>
-            Svaki trenutak, iz svih kutova
+            {t('heroTitle')}
             </h1>
             <Link href={'/login'}>
               <button className='bg-primary text-white text-xl font-semibold py-5 px-12 rounded-full hover:bg-darkmode hover:cursor-pointer mt-10'>
-                Pridružite se
+                {t('heroCta')}
               </button>
             </Link>
           </div>

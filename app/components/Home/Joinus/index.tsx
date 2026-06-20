@@ -1,19 +1,21 @@
 'use client'
 import React from 'react'
+import { useTranslations } from 'next-intl'
 
 const Join = () => {
+  const t = useTranslations('Home')
   return (
     <section id="Contact" className="overflow-hidden bg-joinus">
       <div className="container mx-auto max-w-7xl px-4">
         <div className="text-center">
           <p className="text-primary text-lg font-normal tracking-widest uppercase">
-            Kontaktirajte nas
+            {t('contactEyebrow')}
           </p>
 
-          <h2 className="my-6">Obratite se QReventu</h2>
+          <h2 className="my-6">{t('contactTitle')}</h2>
 
           <p className="text-black/50 text-base font-normal max-w-3xl mx-auto">
-          Imate pitanja o korištenju QReventa za vjenčanje ili događaj? Rado ćemo pomoći.
+          {t('contactSubtitle')}
           </p>
         </div>
 
@@ -21,7 +23,7 @@ const Join = () => {
           <div className="rounded-2xl bg-grey p-10 text-center space-y-6">
             <div>
               <p className="text-sm uppercase tracking-widest text-black/50 mb-2">
-                Email
+                {t('contactEmailLabel')}
               </p>
               <a
                 href="mailto:info@qrevent.pro"
@@ -33,7 +35,7 @@ const Join = () => {
 
             <div>
               <p className="text-sm uppercase tracking-widest text-black/50 mb-2">
-                Mob:
+                {t('contactPhoneLabel')}
               </p>
               <a
                 href="tel:+385XXXXXXXXX"
@@ -44,7 +46,7 @@ const Join = () => {
             </div>
 
             <p className="text-sm text-black/40 pt-4">
-              Dostupni smo preko email-a i WhatsApp aplikacije
+              {t('contactNote')}
             </p>
           </div>
         </div>

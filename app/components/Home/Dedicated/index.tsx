@@ -1,8 +1,10 @@
 'use client'
 import React from 'react'
 import Image from 'next/image'
+import { useTranslations } from 'next-intl'
 
 const Dedicated = () => {
+  const t = useTranslations('Home')
   return (
     <section className='relative bg-cover bg-center overflow-hidden'>
       <div className='container mx-auto max-w-7xl px-4'>
@@ -37,10 +39,10 @@ const Dedicated = () => {
               />
             </div>
             <h2 className='text-center -mr-1 lg:text-start lg:leading-20 leading-14'>
-            “Bez aplikacija. Bez prijave. Samo WhatsApp.”
+            {t('dedicatedQuote')}
             </h2>
             <p className='text-xl font-medium text-black/55 mt-5 text-center lg:text-start'>
-            Kreirajte QR kod za svoj događaj i dopustite gostima da odmah dijele fotografije putem WhatsAppa. Bez aplikacija, bez računa — samo uspomene na jednom mjestu.
+            {t('dedicatedPara')}
             </p>
 
           </div>

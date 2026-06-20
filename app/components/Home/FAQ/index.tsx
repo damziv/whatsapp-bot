@@ -1,6 +1,7 @@
 'use client'
 import React from 'react'
 import { Icon } from '@iconify/react'
+import { useTranslations } from 'next-intl'
 import {
   Disclosure,
   DisclosureButton,
@@ -8,15 +9,16 @@ import {
 } from '@headlessui/react'
 
 const FAQ = () => {
+  const t = useTranslations('Home')
   return (
     <section
       id='FAQ'
       className='relative py-1 bg-cover bg-center overflow-hidde dark:bg-darkmode'>
       <div className='container mx-auto max-w-7xl px-4'>
         <div className='relative rounded-2xl py-24 bg-faq-bg bg-no-repeat bg-cover bg-primary'>
-          <p className='text-lg font-normal text-white text-center mb-6'>FAQ</p>
+          <p className='text-lg font-normal text-white text-center mb-6'>{t('faqEyebrow')}</p>
           <h2 className='text-white text-center max-w-3xl mx-auto'>
-          Često postavljana pitanja
+          {t('faqTitle')}
                     </h2>
           <div className="w-full px-4 pt-16">
   <div className="mx-auto w-full max-w-5xl rounded-2xl p-8 bg-white mb-5">
@@ -25,7 +27,7 @@ const FAQ = () => {
         <div>
           <DisclosureButton className="flex w-full justify-between items-center text-left text-2xl font-medium focus:outline-hidden hover:cursor-pointer">
             <span className="text-black">
-            Trebaju li gosti instalirati aplikaciju?
+            {t('faqQ1')}
             </span>
             <div
               className={`h-5 w-5 transform transition-transform duration-300 ${
@@ -38,7 +40,7 @@ const FAQ = () => {
 
           <DisclosurePanel className="text-base text-black/50 font-normal text-left pt-4 mt-6 border-t border-border">
             <div className="lg:max-w-70%">
-            Ne. Gosti samo skeniraju QR kod i šalju fotografije putem WhatsAppa. Sve radi odmah, bez instalacija i bez registracije.
+            {t('faqA1')}
             </div>
           </DisclosurePanel>
         </div>
@@ -52,7 +54,7 @@ const FAQ = () => {
         <>
           <DisclosureButton className="flex w-full justify-between items-center rounded-lg text-left text-2xl font-medium focus:outline-hidden hover:cursor-pointer">
             <span className="text-black">
-            Kako se fotografije pojavljuju u galeriji?
+            {t('faqQ2')}
             </span>
             <div
               className={`h-5 w-5 transform transition-transform duration-300 ${
@@ -65,7 +67,7 @@ const FAQ = () => {
 
           <DisclosurePanel className="text-base text-black/50 pt-4 mt-6 text-left border-t border-border">
             <div className="lg:max-w-70%">
-            Gosti šalju fotografije putem WhatsAppa, a QRevent ih automatski prikuplja u vašu privatnu galeriju događaja u stvarnom vremenu.
+            {t('faqA2')}
             </div>
           </DisclosurePanel>
         </>
@@ -79,7 +81,7 @@ const FAQ = () => {
         <>
           <DisclosureButton className="flex w-full justify-between items-center rounded-lg text-left text-2xl font-medium focus:outline-hidden hover:cursor-pointer">
             <span className="text-black">
-            Mogu li preuzeti i dijeliti galeriju?
+            {t('faqQ3')}
             </span>
             <div
               className={`h-5 w-5 transform transition-transform duration-300 ${
@@ -92,7 +94,7 @@ const FAQ = () => {
 
           <DisclosurePanel className="text-base text-black/50 pt-4 mt-6 font-normal text-left border-t border-border">
             <div className="lg:max-w-70%">
-            Da. Galeriju možete pregledavati, preuzimati i dijeliti u bilo kojem trenutku. Sve fotografije vaših gostiju nalaze se na jednom mjestu — savršeno nakon događaja
+            {t('faqA3')}
             </div>
           </DisclosurePanel>
         </>

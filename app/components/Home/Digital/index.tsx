@@ -2,8 +2,10 @@
 import React from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 
 const Digital = () => {
+  const t = useTranslations('Home')
   return (
     <section className='relative bg-cover bg-center overflow-hidden'>
       <div className='container mx-auto max-w-7xl px-4'>
@@ -12,16 +14,16 @@ const Digital = () => {
             {/* COLUMN-1 */}
             <div className='pt-24 lg:pl-24'>
               <p className='text-lg font-normal text-white mb-5 tracking-widest text-center lg:text-start uppercase mt-5'>
-                U što vjerujemo
+                {t('digitalEyebrow')}
               </p>
               <h2 className='text-white mb-8 leading-tight text-center lg:text-start lg:w-full'>
-              Vjerujemo da se najbolji trenuci bilježe od svih.
+              {t('digitalTitle')}
               </h2>
               <div className='text-center lg:text-start'>
                 <Link
                   href='#Contact'
                   className='text-xl font-semibold text-white bg-deep-slate/80 hover:bg-deep-slate py-4 px-12 rounded-full'>
-                  Započnite
+                  {t('digitalCta')}
                 </Link>
               </div>
             </div>
