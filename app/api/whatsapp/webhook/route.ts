@@ -172,19 +172,31 @@ function closedMsg(lang: Lang, names: string): string {
   return lang === 'hr' ? `${n} je trenutno zatvoren. ⏱️` : `${n} is currently closed. ⏱️`;
 }
 
-/** Open confirmation — couple-named + localized. */
+/** Open confirmation — couple-named + localized. Demo album also gets a gallery link. */
 function albumSetMsg(lang: Lang, album: AlbumRow): string {
   const n = album.names;
+
+  // For the shared DEMO album only, append a localized gallery link so the
+  // prospect can tap through and watch their test upload appear. Never for real albums.
+  const demoCode = (process.env.DEMO_ALBUM_CODE || 'DEMO').toUpperCase();
+  let galleryLine = '';
+  if (album.code.toUpperCase() === demoCode) {
+    const base =
+      process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://www.qrevent.pro';
+    const url = `${base}/${lang}/gallery?code=${album.code}`;
+    galleryLine = lang === 'hr' ? `\n\n👀 Pogledaj galeriju: ${url}` : `\n\n👀 View the gallery: ${url}`;
+  }
+
   if (lang === 'hr') {
     const head = n ? `Album za vjenčanje ${n} je otvoren ✅` : 'Album je otvoren ✅';
     return `${head}
 Vrijeme: ${fmt(album.start_at)} → ${fmt(album.end_at)}
-Sada šaljite svoje slike ili kratke videe. 📸🎥`;
+Sada šaljite svoje slike ili kratke videe. 📸🎥${galleryLine}`;
   }
   const head = n ? `${n}'s wedding album is open ✅` : 'The album is open ✅';
   return `${head}
 Time: ${fmt(album.start_at)} → ${fmt(album.end_at)}
-Now send your photos or short videos. 📸🎥`;
+Now send your photos or short videos. 📸🎥${galleryLine}`;
 }
 
 /** Build "Bride & Groom" from a nested album row (events → profiles). */
