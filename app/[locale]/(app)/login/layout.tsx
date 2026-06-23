@@ -1,6 +1,6 @@
 export const metadata = {
-  title: 'QR Event.PRO',
-  description: 'Pro Event Gallery',
+  title: 'Sign in',
+  description: 'Sign in to your QRevent portal.',
 }
 
 export default function LoginLayout({

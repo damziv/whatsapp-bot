@@ -1,6 +1,6 @@
 export const metadata = {
-  title: 'QR Event.PRO',
-  description: 'Pro Event Gallery',
+  title: 'Dashboard',
+  description: 'QRevent dashboard.',
 }
 
 export default function DashboardLayout({

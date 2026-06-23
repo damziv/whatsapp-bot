@@ -1,6 +1,6 @@
 export const metadata = {
-  title: 'QR Event.PRO',
-  description: 'Pro Event Gallery',
+  title: 'QRevent',
+  description: 'QRevent — collect event photos over WhatsApp.',
 }
 
 export default function SiteLayout({

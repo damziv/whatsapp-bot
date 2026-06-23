@@ -1,6 +1,6 @@
 export const metadata = {
-  title: 'QR Event.PRO',
-  description: 'Pro Event Gallery',
+  title: 'Gallery',
+  description: 'Your private event photo gallery.',
 }
 
 export default function GalleryLayout({
