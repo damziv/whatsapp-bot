@@ -42,15 +42,26 @@ const Hero = () => {
             </Link>
           </div>
           <div className='xl:col-span-7 lg:col-span-6 lg:block hidden'>
-            <Image
-              src='/images/hero/banner-image1.webp'
-              alt='Guests sharing wedding photos with QRevent over WhatsApp'
-              width={1024}
-              height={904}
-              priority
-              sizes='(min-width: 1024px) 50vw, 100vw'
-              className='w-full h-auto'
-            />
+            <div className='relative'>
+              {/* PNG used as a soft, blurred backdrop behind the crisp WebP */}
+              <Image
+                src='/images/hero/banner-image1.png'
+                alt=''
+                aria-hidden='true'
+                fill
+                sizes='(min-width: 1024px) 50vw, 100vw'
+                className='-z-10 scale-110 object-contain blur-2xl opacity-40'
+              />
+              <Image
+                src='/images/hero/banner-image1.png'
+                alt='Guests sharing wedding photos with QRevent over WhatsApp'
+                width={1024}
+                height={904}
+                priority
+                sizes='(min-width: 1024px) 50vw, 100vw'
+                className='relative w-full h-auto'
+              />
+            </div>
           </div>
         </div>
       </div>
