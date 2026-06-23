@@ -16,9 +16,10 @@
     "rights": "© 2026 — Sva prava pridržana ·"
   },
   "Home": {
-    "heroEyebrow": "QR Events",
-    "heroTitle": "Svaki trenutak, iz svih kutova",
-    "heroCta": "Pridružite se",
+    "heroEyebrow": "Za fotografe i organizatore događaja",
+    "heroTitle": "Neka vaši mladenci prikupe svaku fotografiju gostiju — putem WhatsAppa",
+    "heroSubtitle": "Podijelite jedan QR kod po vjenčanju. Gosti ga skeniraju i šalju fotografije putem WhatsAppa — bez aplikacija. Sve stiže u privatnu galeriju koju predajete paru.",
+    "heroCta": "Zatraži pristup",
     "aboutEyebrow": "o nama",
     "aboutTitle": "Upoznajte nas bolje",
     "aboutCard1Heading": "Izradi QR album",
@@ -202,6 +203,14 @@
     "errNetwork": "Problem s mrežom. Provjerite vezu i pokušajte ponovno.",
     "errCooldown": "Pričekajte trenutak prije nego zatražite novu poveznicu."
   },
+  "Seo": {
+    "homeTitle": "Prikupite svaku fotografiju gostiju s vjenčanja putem WhatsAppa",
+    "homeDescription": "QRevent omogućuje fotografima da paru ponude prikupljanje fotografija gostiju putem WhatsAppa — jedan QR kod, bez aplikacija. Sve fotografije stižu u privatnu galeriju koju možete preuzeti i dijeliti.",
+    "demoTitle": "Demo uživo — prikupite fotografije događaja QR kodom",
+    "demoDescription": "Pogledajte uživo: gosti skeniraju QR, šalju fotografije putem WhatsAppa i gledaju ih u zajedničkoj galeriji. Bez aplikacije, bez registracije — isprobajte odmah.",
+    "registerTitle": "Zatražite pristup — za fotografe",
+    "registerDescription": "Ponudite svojim mladencima prikupljanje fotografija gostiju putem WhatsAppa. Zatražite svoj QRevent fotografski račun i počnite u nekoliko minuta."
+  },
   "Register": {
     "title": "Zatraži pristup",
     "subtitle": "Recite nam nešto o sebi i postavit ćemo vaš fotografski račun.",
@@ -225,7 +234,7 @@
     "titleLine2": "— prikupljenu putem WhatsAppa.",
     "subtitle": "Vi izradite jedan QR kod po vjenčanju. Gosti ga skeniraju i šalju svoje fotografije i videe izravno s WhatsAppa — bez aplikacija, bez prijava. Sve stiže u privatnu galeriju koju predajete paru.",
     "tryDemoCta": "Isprobaj demo uživo ↓",
-    "getStarted": "Započni besplatno",
+    "getStarted": "Zatraži pristup",
     "howTitle": "Kako izraditi album — u manje od minute",
     "step1Title": "Izradite album",
     "step1Desc": "Prijavite se, unesite imena para i datum. Jedan album = jedan QR kod.",
@@ -242,7 +251,7 @@
     "fullGallery": "Otvori punu galeriju koju dobivaju vaši mladenci ▸",
     "liveGallery": "Demo galerija uživo",
     "convertTitle": "Spremni ponuditi ovo svojim mladencima?",
-    "convertDesc": "Otvorite račun i izradite svoj prvi QR za vjenčanje u manje od minute.",
-    "createAccount": "Otvori račun"
+    "convertDesc": "Zatražite pristup i postavit ćemo vaš račun kako biste izradili svoj prvi QR za vjenčanje.",
+    "createAccount": "Zatraži svoj račun"
   }
 }

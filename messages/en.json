@@ -16,9 +16,10 @@
     "rights": "© 2026 — All rights reserved by"
   },
   "Home": {
-    "heroEyebrow": "QR Events",
-    "heroTitle": "Every moment, from every angle",
-    "heroCta": "Join now",
+    "heroEyebrow": "For photographers & event pros",
+    "heroTitle": "Let your couples collect every guest’s photo — over WhatsApp",
+    "heroSubtitle": "You share one QR code per wedding. Guests scan it and send their photos on WhatsApp — no apps. Everything lands in a private gallery you hand to the couple.",
+    "heroCta": "Request access",
     "aboutEyebrow": "about us",
     "aboutTitle": "Get to know us",
     "aboutCard1Heading": "Create a QR album",
@@ -202,6 +203,14 @@
     "errNetwork": "Network issue detected. Please check your connection and try again.",
     "errCooldown": "Please wait a moment before requesting another link."
   },
+  "Seo": {
+    "homeTitle": "Collect every guest’s wedding photo over WhatsApp",
+    "homeDescription": "QRevent lets photographers offer couples guest-photo collection via WhatsApp — one QR code, no apps. Every photo lands in a private gallery you can download and share.",
+    "demoTitle": "Live demo — collect event photos with a QR code",
+    "demoDescription": "See it live: guests scan a QR, send photos on WhatsApp, and watch them appear in a shared gallery. No app, no signup — try it now.",
+    "registerTitle": "Request access — for photographers",
+    "registerDescription": "Offer your couples WhatsApp guest-photo collection. Request your QRevent photographer account and start in minutes."
+  },
   "Register": {
     "title": "Request access",
     "subtitle": "Tell us a bit about you and we'll set up your photographer account.",
@@ -225,7 +234,7 @@
     "titleLine2": "— collected over WhatsApp.",
     "subtitle": "You create one QR code per wedding. Guests scan it and send their photos and videos straight from WhatsApp — no app, no logins. Everything lands in a private gallery you hand to the couple.",
     "tryDemoCta": "Try the live demo ↓",
-    "getStarted": "Get started free",
+    "getStarted": "Request access",
     "howTitle": "How you create an album — in under a minute",
     "step1Title": "Create an album",
     "step1Desc": "Log in, enter the couple's names and the date. One album = one QR code.",
@@ -242,7 +251,7 @@
     "fullGallery": "Open the full gallery your couples get ▸",
     "liveGallery": "Live demo gallery",
     "convertTitle": "Ready to offer this to your couples?",
-    "convertDesc": "Create your account and generate your first wedding QR in under a minute.",
-    "createAccount": "Create your account"
+    "convertDesc": "Request access and we'll set up your account so you can generate your first wedding QR.",
+    "createAccount": "Request your account"
   }
 }
