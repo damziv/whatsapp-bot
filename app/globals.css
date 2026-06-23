@@ -104,31 +104,31 @@
   }
 
   section {
-    @apply py-20;
+    @apply py-16;
   }
 
   h1 {
-    @apply text-black text-6xl sm:text-80 font-bold sm:leading-24 leading-20;
+    @apply text-black text-4xl sm:text-5xl font-bold leading-[1.1] tracking-[-0.02em];
   }
 
   h2 {
-    @apply text-black text-5xl lg:text-65 font-bold;
+    @apply text-black text-3xl sm:text-4xl font-bold leading-tight tracking-[-0.02em];
   }
 
   h3 {
-    @apply text-black text-4xl lg:text-6xl font-semibold;
+    @apply text-black text-2xl sm:text-3xl font-semibold tracking-[-0.01em];
   }
 
   h4 {
-    @apply text-black text-3xl lg:text-4xl font-semibold;
+    @apply text-black text-xl sm:text-2xl font-semibold;
   }
 
   h5 {
-    @apply text-black text-2xl font-semibold;
+    @apply text-black text-lg sm:text-xl font-semibold;
   }
 
   h6 {
-    @apply text-black text-xl;
+    @apply text-black text-base font-medium;
   }
 }
 

@@ -50,9 +50,9 @@ const Header: React.FC = () => {
 
   const headerData: HeaderItem[] = [
     { label: tNav('demo'), href: `/${locale}/demo` },
-    { label: tNav('about'), href: '#About' },
-    { label: tNav('faq'), href: '#FAQ' },
-    { label: tNav('contact'), href: '#Contact' },
+    { label: tNav('about'), href: `/${locale}#About` },
+    { label: tNav('faq'), href: `/${locale}#FAQ` },
+    { label: tNav('contact'), href: `/${locale}#Contact` },
   ]
 
   return (

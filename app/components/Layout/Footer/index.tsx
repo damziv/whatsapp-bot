@@ -2,19 +2,20 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 
 const footer = () => {
   const tf = useTranslations('Footer')
   const tNav = useTranslations('Nav')
+  const locale = useLocale()
 
   const sections = [
     {
       section: tf('menuTitle'),
       links: [
-        { label: tNav('about'), href: '#About' },
-        { label: tNav('faq'), href: '#FAQ' },
-        { label: tNav('contact'), href: '#Contact' },
+        { label: tNav('about'), href: `/${locale}#About` },
+        { label: tNav('faq'), href: `/${locale}#FAQ` },
+        { label: tNav('contact'), href: `/${locale}#Contact` },
       ],
     },
   ]
