@@ -43,11 +43,13 @@ const Hero = () => {
           </div>
           <div className='xl:col-span-7 lg:col-span-6 lg:block hidden'>
             <Image
-              src='/images/hero/banner-image1.png'
-              alt='banner image'
-              width={600}
-              height={600}
-              className='w-full'
+              src='/images/hero/banner-image1.webp'
+              alt='Guests sharing wedding photos with QRevent over WhatsApp'
+              width={1024}
+              height={904}
+              priority
+              sizes='(min-width: 1024px) 50vw, 100vw'
+              className='w-full h-auto'
             />
           </div>
         </div>

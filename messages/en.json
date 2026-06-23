@@ -4,6 +4,7 @@
   },
   "Nav": {
     "demo": "Demo",
+    "pricing": "Pricing",
     "about": "About",
     "faq": "FAQ",
     "contact": "Contact"
@@ -209,7 +210,34 @@
     "demoTitle": "Live demo — collect event photos with a QR code",
     "demoDescription": "See it live: guests scan a QR, send photos on WhatsApp, and watch them appear in a shared gallery. No app, no signup — try it now.",
     "registerTitle": "Request access — for photographers",
-    "registerDescription": "Offer your couples WhatsApp guest-photo collection. Request your QRevent photographer account and start in minutes."
+    "registerDescription": "Offer your couples WhatsApp guest-photo collection. Request your QRevent photographer account and start in minutes.",
+    "pricingTitle": "Pricing — per-event QR bundles",
+    "pricingDescription": "Simple per-event pricing for QRevent. One QR code per wedding or event, in yearly bundles from €60. No monthly fees."
+  },
+  "Pricing": {
+    "title": "Simple, per-event pricing",
+    "subtitle": "One QR code = one wedding or event. Pick a yearly bundle that fits how much you shoot — no monthly fees.",
+    "perYear": "/ year",
+    "codes": "QR codes",
+    "perCodeSuffix": "per code",
+    "mostPopular": "Most popular",
+    "cta": "Request access",
+    "starterName": "Starter",
+    "starterDesc": "For solo photographers with a handful of events.",
+    "proName": "Pro",
+    "proDesc": "For busy photographers and small studios.",
+    "studioName": "Studio",
+    "studioDesc": "For studios and event managers running many events.",
+    "includesTitle": "Every plan includes",
+    "features": [
+      "Unlimited guests per event",
+      "Photos & videos collected over WhatsApp",
+      "Private gallery + download all (.zip)",
+      "Photos kept for 2 months",
+      "English & Croatian — interface and bot"
+    ],
+    "note": "Need more codes or a custom plan for an agency?",
+    "noteCta": "Talk to us"
   },
   "Register": {
     "title": "Request access",

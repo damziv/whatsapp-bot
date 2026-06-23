@@ -13,6 +13,8 @@ const footer = () => {
     {
       section: tf('menuTitle'),
       links: [
+        { label: tNav('demo'), href: `/${locale}/demo` },
+        { label: tNav('pricing'), href: `/${locale}/pricing` },
         { label: tNav('about'), href: `/${locale}#About` },
         { label: tNav('faq'), href: `/${locale}#FAQ` },
         { label: tNav('contact'), href: `/${locale}#Contact` },
@@ -100,12 +102,12 @@ const footer = () => {
               </p>
             </div>
             <div className='flex justify-center md:justify-end'>
-              <Link href='/'>
+              <Link href={`/${locale}/privacy`}>
                 <p className='text-base text-white pr-6 hover:text-white/60 hover:underline'>
                   {tf('privacy')}
                 </p>
               </Link>
-              <Link href='/'>
+              <Link href={`/${locale}/terms`}>
                 <p className='text-base text-white pl-6 border-solid border-l border-footer hover:text-white/60 hover:underline'>
                   {tf('terms')}
                 </p>

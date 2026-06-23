@@ -4,6 +4,7 @@
   },
   "Nav": {
     "demo": "Demo",
+    "pricing": "Cijene",
     "about": "O nama",
     "faq": "FAQ",
     "contact": "Kontakt"
@@ -209,7 +210,34 @@
     "demoTitle": "Demo uživo — prikupite fotografije događaja QR kodom",
     "demoDescription": "Pogledajte uživo: gosti skeniraju QR, šalju fotografije putem WhatsAppa i gledaju ih u zajedničkoj galeriji. Bez aplikacije, bez registracije — isprobajte odmah.",
     "registerTitle": "Zatražite pristup — za fotografe",
-    "registerDescription": "Ponudite svojim mladencima prikupljanje fotografija gostiju putem WhatsAppa. Zatražite svoj QRevent fotografski račun i počnite u nekoliko minuta."
+    "registerDescription": "Ponudite svojim mladencima prikupljanje fotografija gostiju putem WhatsAppa. Zatražite svoj QRevent fotografski račun i počnite u nekoliko minuta.",
+    "pricingTitle": "Cijene — paketi QR kodova po događaju",
+    "pricingDescription": "Jednostavne cijene po događaju za QRevent. Jedan QR kod po vjenčanju ili događaju, godišnji paketi od 60 €. Bez mjesečnih naknada."
+  },
+  "Pricing": {
+    "title": "Jednostavne cijene po događaju",
+    "subtitle": "Jedan QR kod = jedno vjenčanje ili događaj. Odaberite godišnji paket prema tome koliko snimate — bez mjesečnih naknada.",
+    "perYear": "/ godišnje",
+    "codes": "QR kodova",
+    "perCodeSuffix": "po kodu",
+    "mostPopular": "Najpopularnije",
+    "cta": "Zatraži pristup",
+    "starterName": "Starter",
+    "starterDesc": "Za samostalne fotografe s nekoliko događaja.",
+    "proName": "Pro",
+    "proDesc": "Za zaposlene fotografe i manje studije.",
+    "studioName": "Studio",
+    "studioDesc": "Za studije i organizatore koji vode mnogo događaja.",
+    "includesTitle": "Svaki paket uključuje",
+    "features": [
+      "Neograničen broj gostiju po događaju",
+      "Fotografije i videi prikupljeni putem WhatsAppa",
+      "Privatna galerija + preuzimanje svega (.zip)",
+      "Fotografije se čuvaju 2 mjeseca",
+      "Engleski i hrvatski — sučelje i bot"
+    ],
+    "note": "Trebate više kodova ili prilagođeni plan za agenciju?",
+    "noteCta": "Javite nam se"
   },
   "Register": {
     "title": "Zatraži pristup",

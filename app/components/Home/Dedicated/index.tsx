@@ -38,10 +38,10 @@ const Dedicated = () => {
                 className='absolute -top-16 -left-32 hidden lg:block'
               />
             </div>
-            <h2 className='text-center -mr-1 lg:text-start lg:leading-20 leading-14'>
+            <h2 className='text-center lg:text-start leading-tight'>
             {t('dedicatedQuote')}
             </h2>
-            <p className='text-xl font-medium text-black/55 mt-5 text-center lg:text-start'>
+            <p className='text-lg font-medium text-black/55 mt-4 text-center lg:text-start'>
             {t('dedicatedPara')}
             </p>
 
