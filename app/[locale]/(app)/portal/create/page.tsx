@@ -170,6 +170,7 @@ export default function PortalCreatePage() {
                 <option value="">{t('langAuto')}</option>
                 <option value="hr">{t('langCroatian')}</option>
                 <option value="en">{t('langEnglish')}</option>
+                <option value="de">{t('langGerman')}</option>
               </select>
               <p className="text-xs text-neutral-500">{t('langHelper')}</p>
             </div>

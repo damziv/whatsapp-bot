@@ -114,7 +114,8 @@
     "langAuto": "Automatski (prema broju gosta)",
     "langCroatian": "Hrvatski",
     "langEnglish": "Engleski",
-    "langHelper": "Jezik na kojem WhatsApp bot odgovara. Automatski bira hrvatski ili engleski za svakog gosta prema njegovom broju telefona.",
+    "langGerman": "Njemački",
+    "langHelper": "Jezik na kojem WhatsApp bot odgovara. Automatski bira hrvatski, njemački ili engleski za svakog gosta prema njegovom broju telefona.",
     "createBtn": "Kreiraj album i preuzmi QR kod",
     "creating": "kreiram…",
     "allAlbums": "Svi albumi",
@@ -234,7 +235,7 @@
       "Fotografije i videi prikupljeni putem WhatsAppa",
       "Privatna galerija + preuzimanje svega (.zip)",
       "Fotografije se čuvaju 2 mjeseca",
-      "Engleski i hrvatski — sučelje i bot"
+      "Engleski, hrvatski i njemački — sučelje i bot"
     ],
     "note": "Trebate više kodova ili prilagođeni plan za agenciju?",
     "noteCta": "Javite nam se"

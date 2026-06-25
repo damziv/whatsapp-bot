@@ -100,16 +100,23 @@ function fmt(dt?: string | null) {
 }
 
 // -------------------- LANGUAGE --------------------
-type Lang = 'hr' | 'en';
+type Lang = 'hr' | 'en' | 'de';
 
-/** Auto-detect language from the guest's phone country code (Croatia → hr, else en). */
+/**
+ * Auto-detect language from the guest's phone country code.
+ *  - Croatia/Bosnia/Serbia (385/387/381) → hr (mutually intelligible, Latin)
+ *  - Germany/Austria (49/43) → de
+ *  - everything else → en
+ */
 function langFromMsisdn(msisdn: string): Lang {
-  return msisdn.startsWith('385') ? 'hr' : 'en';
+  if (msisdn.startsWith('385') || msisdn.startsWith('387') || msisdn.startsWith('381')) return 'hr';
+  if (msisdn.startsWith('49') || msisdn.startsWith('43')) return 'de';
+  return 'en';
 }
 
-/** Album's explicit language wins (hr/en); otherwise auto-detect from the number. */
+/** Album's explicit language wins (hr/en/de); otherwise auto-detect from the number. */
 function resolveLang(albumLang: string | null | undefined, msisdn: string): Lang {
-  if (albumLang === 'hr' || albumLang === 'en') return albumLang;
+  if (albumLang === 'hr' || albumLang === 'en' || albumLang === 'de') return albumLang;
   return langFromMsisdn(msisdn);
 }
 
@@ -147,29 +154,50 @@ const MSG: Record<Lang, {
     videoUploaded: 'Video uploaded ✔️ Thanks!',
     uploadError: 'Oops, an error occurred. Please try again.',
   },
+  de: {
+    promptScan: 'Senden Sie "ALBUM <code>", um ein Album zu wählen (z. B. ALBUM K3H9WT). Senden Sie danach Fotos oder kurze Videos. 📸🎥',
+    unknownCode: 'Unbekannter Album-Code. Bitte prüfen Sie ihn und versuchen Sie es erneut.',
+    bindError: 'Fehler beim Festlegen des Albums. Bitte versuchen Sie es erneut.',
+    onlyMedia: 'Nur Fotos und kurze Videos sind erlaubt. 📸🎥\nTipp: Senden Sie "ALBUM <code>", um ein Album zu wählen.',
+    chooseFirst: 'Bitte wählen Sie zuerst ein Album: Senden Sie "ALBUM <code>" (QR-Code scannen).',
+    duplicate: 'Sieht aus wie ein Duplikat. Übersprungen. 😉',
+    uploaded: 'Hochgeladen ✔️ Danke!',
+    videoUploaded: 'Video hochgeladen ✔️ Danke!',
+    uploadError: 'Hoppla, ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.',
+  },
 };
 
 /** Couple-named subject for status replies, e.g. "Ana & Marko's wedding album". */
 function albumNamePhrase(lang: Lang, names: string): string {
-  if (!names) return lang === 'hr' ? 'Ovaj album' : 'This album';
-  return lang === 'hr' ? `Album za vjenčanje ${names}` : `${names}'s wedding album`;
+  if (!names) {
+    if (lang === 'hr') return 'Ovaj album';
+    if (lang === 'de') return 'Dieses Album';
+    return 'This album';
+  }
+  if (lang === 'hr') return `Album za vjenčanje ${names}`;
+  if (lang === 'de') return `Das Hochzeitsalbum von ${names}`;
+  return `${names}'s wedding album`;
 }
 
 function notActiveMsg(lang: Lang, names: string): string {
   const n = albumNamePhrase(lang, names);
-  return lang === 'hr' ? `${n} još nije aktivan.` : `${n} is not active.`;
+  if (lang === 'hr') return `${n} još nije aktivan.`;
+  if (lang === 'de') return `${n} ist noch nicht aktiv.`;
+  return `${n} is not active.`;
 }
 
 function notOpenMsg(lang: Lang, names: string): string {
   const n = albumNamePhrase(lang, names);
-  return lang === 'hr'
-    ? `${n} još nije otvoren (izvan dozvoljenog vremena).`
-    : `${n} is not open yet (outside the allowed time).`;
+  if (lang === 'hr') return `${n} još nije otvoren (izvan dozvoljenog vremena).`;
+  if (lang === 'de') return `${n} ist noch nicht geöffnet (außerhalb der erlaubten Zeit).`;
+  return `${n} is not open yet (outside the allowed time).`;
 }
 
 function closedMsg(lang: Lang, names: string): string {
   const n = albumNamePhrase(lang, names);
-  return lang === 'hr' ? `${n} je trenutno zatvoren. ⏱️` : `${n} is currently closed. ⏱️`;
+  if (lang === 'hr') return `${n} je trenutno zatvoren. ⏱️`;
+  if (lang === 'de') return `${n} ist derzeit geschlossen. ⏱️`;
+  return `${n} is currently closed. ⏱️`;
 }
 
 /** Open confirmation — couple-named + localized. Demo album also gets a gallery link. */
@@ -184,19 +212,24 @@ function albumSetMsg(lang: Lang, album: AlbumRow): string {
     const base =
       process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://www.qrevent.pro';
     const url = `${base}/${lang}/gallery?code=${album.code}`;
-    galleryLine = lang === 'hr' ? `\n\n👀 Pogledaj galeriju: ${url}` : `\n\n👀 View the gallery: ${url}`;
+    if (lang === 'hr') galleryLine = `\n\n👀 Pogledaj galeriju: ${url}`;
+    else if (lang === 'de') galleryLine = `\n\n👀 Galerie ansehen: ${url}`;
+    else galleryLine = `\n\n👀 View the gallery: ${url}`;
   }
+
+  const start = fmt(album.start_at);
+  const end = fmt(album.end_at);
 
   if (lang === 'hr') {
     const head = n ? `Album za vjenčanje ${n} je otvoren ✅` : 'Album je otvoren ✅';
-    return `${head}
-Vrijeme: ${fmt(album.start_at)} → ${fmt(album.end_at)}
-Sada šaljite svoje slike ili kratke videe. 📸🎥${galleryLine}`;
+    return `${head}\nVrijeme: ${start} → ${end}\nSada šaljite svoje slike ili kratke videe. 📸🎥${galleryLine}`;
+  }
+  if (lang === 'de') {
+    const head = n ? `Das Hochzeitsalbum von ${n} ist geöffnet ✅` : 'Das Album ist geöffnet ✅';
+    return `${head}\nZeit: ${start} → ${end}\nSenden Sie jetzt Ihre Fotos oder kurzen Videos. 📸🎥${galleryLine}`;
   }
   const head = n ? `${n}'s wedding album is open ✅` : 'The album is open ✅';
-  return `${head}
-Time: ${fmt(album.start_at)} → ${fmt(album.end_at)}
-Now send your photos or short videos. 📸🎥${galleryLine}`;
+  return `${head}\nTime: ${start} → ${end}\nNow send your photos or short videos. 📸🎥${galleryLine}`;
 }
 
 /** Build "Bride & Groom" from a nested album row (events → profiles). */

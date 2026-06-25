@@ -174,6 +174,85 @@ export const privacy: Record<string, LegalDocument> = {
       },
     ],
   },
+  de: {
+    title: 'Datenschutzerklärung',
+    description: 'Wie QRevent Fotos und personenbezogene Daten erhebt, nutzt und schützt.',
+    updated: '23. Juni 2026',
+    intro:
+      'Diese Datenschutzerklärung erläutert, wie QRevent ("QRevent", "wir", "uns") mit personenbezogenen Daten umgeht, wenn Sie unseren Dienst nutzen. Mit QRevent sammeln Fotografen Event-Fotos von Gästen über WhatsApp. Bei Fragen kontaktieren Sie uns unter info@qrevent.pro.',
+    sections: [
+      {
+        h: 'Wer wir sind',
+        p: [
+          'QRevent ist ein Dienst zur Sammlung von Event-Fotos. Wir betreiben derzeit kein eingetragenes Unternehmen; der Dienst wird von einer Einzelperson betrieben, die unter info@qrevent.pro erreichbar ist. Nutzen Sie dieselbe Adresse für alle Datenschutzanfragen.',
+        ],
+      },
+      {
+        h: 'Welche Daten wir erheben',
+        p: [
+          'Fotografenkonten: Ihr Name und Ihre E-Mail-Adresse, zum Erstellen und Verwalten Ihres Kontos.',
+          'Event-Gäste: Wenn ein Gast Fotos oder Videos über WhatsApp sendet, erhalten wir seine WhatsApp-Telefonnummer und die gesendeten Medien.',
+          'Paare (Event-Eigentümer): eine PIN, die wir generieren, damit Sie Ihre Galerie verwalten können — wir verlangen kein Konto von Ihnen.',
+          'Technische Daten: grundlegende Protokolle (wie IP-Adresse und Zeitstempel), die unsere Hosting-Anbieter aus Sicherheits- und Zuverlässigkeitsgründen erstellen.',
+        ],
+      },
+      {
+        h: 'Wie wir Ihre Daten nutzen',
+        p: [
+          'Zur Bereitstellung des Dienstes — Sammeln von Gästefotos in einer privaten Galerie und deren Bereitstellung für das Paar.',
+          'Zum Erstellen und Verwalten von Fotografenkonten und zum Versand kontobezogener E-Mails.',
+          'Um den Dienst sicher und funktionsfähig zu halten.',
+        ],
+      },
+      {
+        h: 'WhatsApp',
+        p: [
+          'Gäste erreichen uns, indem sie unsere WhatsApp-Nummer anschreiben. Diese Nachrichten werden über WhatsApp zugestellt, das von Meta betrieben wird und dessen eigenen Datenschutzbestimmungen unterliegt. Wir erhalten nur die Nachrichten, die ein Gast an das Album sendet.',
+        ],
+      },
+      {
+        h: 'Mit wem wir Daten teilen',
+        p: [
+          'Für den Betrieb des Dienstes nutzen wir vertrauenswürdige Anbieter: Supabase (Foto- und Datenbankspeicher), Vercel (Hosting), Resend (transaktionale E-Mails) und Meta/WhatsApp (Nachrichten). Sie verarbeiten Daten in unserem Auftrag und können sie in der EU und/oder den USA speichern.',
+          'Wir verkaufen Ihre personenbezogenen Daten nicht.',
+        ],
+      },
+      {
+        h: 'Wie lange wir Fotos aufbewahren',
+        p: [
+          'In ein Album hochgeladene Fotos und Videos werden zwei Monate nach dem Hochladen automatisch gelöscht.',
+          'Wenn das Paar die vollständige Galerie herunterlädt, werden die Fotos des Albums 24 Stunden später dauerhaft gelöscht.',
+          'Kontodaten von Fotografen werden bis zur Schließung des Kontos aufbewahrt.',
+        ],
+      },
+      {
+        h: 'Ihre Rechte',
+        p: [
+          'Wenn Sie sich in der EU/im EWR befinden, haben Sie das Recht auf Auskunft, Berichtigung oder Löschung Ihrer personenbezogenen Daten sowie auf Widerspruch gegen oder Einschränkung ihrer Verarbeitung.',
+          'Gäste können uns bitten, ein von ihnen hochgeladenes Foto zu entfernen. Paare und Fotografen können Fotos direkt in ihrer Galerie löschen.',
+          'Um eines dieser Rechte auszuüben, kontaktieren Sie info@qrevent.pro.',
+        ],
+      },
+      {
+        h: 'Cookies',
+        p: [
+          'Wir verwenden nur wenige Cookies, ausschließlich um Ihre Spracheinstellung zu speichern und Sie im Portal angemeldet zu halten. Wir verwenden keine Werbe- oder Tracking-Cookies.',
+        ],
+      },
+      {
+        h: 'Kinder',
+        p: ['QRevent richtet sich an Fotografen und ihre Kunden. Es ist nicht für Kinder bestimmt.'],
+      },
+      {
+        h: 'Änderungen dieser Erklärung',
+        p: ['Wir können diese Datenschutzerklärung von Zeit zu Zeit aktualisieren. Das Datum oben zeigt, wann sie zuletzt geändert wurde.'],
+      },
+      {
+        h: 'Kontakt',
+        p: ['Bei Fragen oder Anliegen zum Datenschutz schreiben Sie an info@qrevent.pro.'],
+      },
+    ],
+  },
 }
 
 export const terms: Record<string, LegalDocument> = {
@@ -324,6 +403,81 @@ export const terms: Record<string, LegalDocument> = {
       {
         h: 'Kontakt',
         p: ['Pitanja o ovim uvjetima? Pišite na info@qrevent.pro.'],
+      },
+    ],
+  },
+  de: {
+    title: 'Nutzungsbedingungen',
+    description: 'Die Bedingungen für die Nutzung des QRevent-Dienstes zur Event-Fotosammlung.',
+    updated: '23. Juni 2026',
+    intro:
+      'Diese Nutzungsbedingungen regeln Ihre Nutzung von QRevent. Durch die Nutzung des Dienstes stimmen Sie diesen Bedingungen zu. Wenn Sie nicht einverstanden sind, nutzen Sie QRevent bitte nicht. Sie können uns unter info@qrevent.pro kontaktieren.',
+    sections: [
+      {
+        h: 'Der Dienst',
+        p: [
+          'Mit QRevent erstellen Fotografen einen QR-Code für ein Event. Gäste scannen ihn, senden Fotos und Videos über WhatsApp, und diese landen in einer privaten Galerie, die der Fotograf mit dem Paar teilt.',
+        ],
+      },
+      {
+        h: 'Konten',
+        p: [
+          'Fotografenkonten werden auf Anfrage erstellt und bedürfen unserer Genehmigung. Sie sind dafür verantwortlich, Ihr Konto und alle von Ihnen geteilten PINs sicher zu halten.',
+          'Bei der Anfrage müssen Sie korrekte Angaben machen.',
+        ],
+      },
+      {
+        h: 'Zulässige Nutzung',
+        p: [
+          'Laden oder sammeln Sie nur Inhalte, zu deren Nutzung Sie berechtigt sind. Nutzen Sie QRevent nicht für rechtswidrige, rechtsverletzende oder anstößige Inhalte.',
+          'Das Demo-Album ist gemeinsam genutzt und dient nur zu Testzwecken — verwenden Sie es nicht für echte Events oder privates Material.',
+        ],
+      },
+      {
+        h: 'Ihre Inhalte',
+        p: [
+          'Fotografen, Paare und Gäste behalten alle Rechte an den Fotos und Videos, die sie erstellen oder hochladen.',
+          'Sie gewähren QRevent die Erlaubnis, diese Inhalte nur insoweit zu speichern und zu verarbeiten, wie es zur Bereitstellung des Dienstes erforderlich ist — etwa um sie in der Galerie anzuzeigen und dem Paar das Herunterladen zu ermöglichen.',
+        ],
+      },
+      {
+        h: 'Aufbewahrung und Löschung von Fotos',
+        p: [
+          'Fotos werden zwei Monate nach dem Hochladen automatisch gelöscht sowie 24 Stunden nachdem das Paar die vollständige Galerie heruntergeladen hat.',
+          'QRevent ist kein Backup-Dienst. Bitte bewahren Sie eigene Kopien aller Fotos auf, die Sie behalten möchten.',
+        ],
+      },
+      {
+        h: 'Pläne und Zahlung',
+        p: [
+          'Kostenpflichtige Pläne sind auf unserer Preisseite beschrieben. Die Preise gelten pro Jahr und werden direkt mit uns vereinbart. Wir können Preise für zukünftige Käufe ändern.',
+        ],
+      },
+      {
+        h: 'Verfügbarkeit',
+        p: [
+          'Wir bemühen uns, QRevent verfügbar und zuverlässig zu halten, der Dienst wird jedoch "wie besehen" bereitgestellt, und wir können keinen unterbrechungs- oder fehlerfreien Betrieb garantieren.',
+        ],
+      },
+      {
+        h: 'Haftungsbeschränkung',
+        p: [
+          'Im größtmöglichen gesetzlich zulässigen Umfang haftet QRevent nicht für verlorene Fotos, Daten oder sonstige indirekte Schäden, die aus Ihrer Nutzung des Dienstes entstehen. Bewahren Sie stets eigene Kopien wichtiger Fotos auf.',
+        ],
+      },
+      {
+        h: 'Änderungen dieser Bedingungen',
+        p: [
+          'Wir können diese Bedingungen von Zeit zu Zeit aktualisieren. Das Datum oben zeigt, wann sie zuletzt geändert wurden. Die fortgesetzte Nutzung von QRevent bedeutet, dass Sie die aktualisierten Bedingungen akzeptieren.',
+        ],
+      },
+      {
+        h: 'Anwendbares Recht',
+        p: ['Diese Bedingungen unterliegen dem Recht der Republik Kroatien und dem geltenden EU-Recht.'],
+      },
+      {
+        h: 'Kontakt',
+        p: ['Fragen zu diesen Bedingungen? Schreiben Sie an info@qrevent.pro.'],
       },
     ],
   },

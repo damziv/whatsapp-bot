@@ -114,7 +114,8 @@
     "langAuto": "Auto (by guest's phone)",
     "langCroatian": "Croatian",
     "langEnglish": "English",
-    "langHelper": "Language the WhatsApp bot replies in. Auto picks Croatian or English per guest, based on their phone number.",
+    "langGerman": "German",
+    "langHelper": "Language the WhatsApp bot replies in. Auto picks Croatian, German or English per guest, based on their phone number.",
     "createBtn": "Create album & get QR code",
     "creating": "Creating…",
     "allAlbums": "All albums",
@@ -234,7 +235,7 @@
       "Photos & videos collected over WhatsApp",
       "Private gallery + download all (.zip)",
       "Photos kept for 2 months",
-      "English & Croatian — interface and bot"
+      "English, Croatian & German — interface and bot"
     ],
     "note": "Need more codes or a custom plan for an agency?",
     "noteCta": "Talk to us"

@@ -1,7 +1,8 @@
 import type { LegalDocument } from '@/lib/legal'
 
 export default function LegalDoc({ doc, locale }: { doc: LegalDocument; locale: string }) {
-  const updatedLabel = locale === 'hr' ? 'Posljednja izmjena' : 'Last updated'
+  const updatedLabel =
+    locale === 'hr' ? 'Posljednja izmjena' : locale === 'de' ? 'Zuletzt aktualisiert' : 'Last updated'
 
   return (
     <main className='min-h-screen bg-gradient-to-b from-brand-50 to-white px-4 pt-32 pb-20 dark:from-neutral-900 dark:to-neutral-950'>

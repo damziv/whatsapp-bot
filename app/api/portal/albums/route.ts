@@ -180,8 +180,8 @@ export async function POST(req: NextRequest) {
   const ownerPin = pin6();
   const ownerPinHash = hashPin(ownerPin);
 
-  // Bot language for this album: explicit hr/en, or null = auto-detect per guest.
-  const albumLang = body.lang === 'hr' || body.lang === 'en' ? body.lang : null;
+  // Bot language for this album: explicit hr/en/de, or null = auto-detect per guest.
+  const albumLang = body.lang === 'hr' || body.lang === 'en' || body.lang === 'de' ? body.lang : null;
 
   let code: string | null = null;
   for (let i = 0; i < 7; i++) {

@@ -6,6 +6,7 @@ import { usePathname, useRouter } from '@/i18n/navigation';
 const LOCALES = [
   { code: 'en', label: 'EN' },
   { code: 'hr', label: 'HR' },
+  { code: 'de', label: 'DE' },
 ] as const;
 
 export default function LanguageSwitcher() {

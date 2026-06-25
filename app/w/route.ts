@@ -31,7 +31,8 @@ export async function GET(req: NextRequest) {
       if (album) {
         // No guest phone number yet at scan time, so we can't auto-detect:
         // use the album's explicit language, else default to English.
-        const lang = (album as any).lang === 'hr' || (album as any).lang === 'en' ? (album as any).lang : 'en';
+        const al = (album as any).lang;
+        const lang = al === 'hr' || al === 'en' || al === 'de' ? al : 'en';
 
         const ev = firstRel<any>((album as any).events);
         const prof = firstRel<any>(ev?.profiles);
@@ -43,6 +44,10 @@ export async function GET(req: NextRequest) {
           text = names
             ? `Bok! 📸 Šaljem svoje fotografije s vjenčanja ${names} (ALBUM ${code})`
             : `Bok! 📸 Šaljem svoje fotografije (ALBUM ${code})`;
+        } else if (lang === 'de') {
+          text = names
+            ? `Hallo! 📸 Ich teile meine Fotos von der Hochzeit von ${names} (ALBUM ${code})`
+            : `Hallo! 📸 Ich teile meine Fotos (ALBUM ${code})`;
         } else {
           text = names
             ? `Hi! 📸 Sharing my photos for ${names}'s wedding (ALBUM ${code})`
